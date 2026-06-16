@@ -1,0 +1,33 @@
+# ─── Secrets ───────────────────────────────────
+.env
+.env.local
+*.pem
+
+# ─── Python ────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.uv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# ─── Node / Frontend ───────────────────────────
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+*.tsbuildinfo
+coverage/
+
+# ─── Editors / OS ──────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
