@@ -13,6 +13,7 @@ import {
 import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangeBadge } from "@/components/ChangeBadge";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { Sparkline } from "@/components/Sparkline";
 import { CenteredSpinner } from "@/components/ui/Spinner";
 import { useMarketSummary, useAlerts } from "@/hooks/useStockData";
@@ -31,13 +32,13 @@ export function Dashboard() {
   const triggered = (alerts ?? []).filter((a) => a.is_triggered);
 
   return (
-    <div className="animate-rise space-y-6">
+    <div className="animate-rise space-y-3">
       <header className="flex items-end justify-between">
         <div>
-          <p className="num text-xs uppercase tracking-[0.18em] text-faint">
+          <h1 className="font-display text-2xl font-semibold">Market overview</h1>
+          <p className="num text-muted-foreground mt-0.5 text-sm">
             Nigerian Exchange
           </p>
-          <h1 className="font-display text-3xl text-ink">Market overview</h1>
         </div>
         <p className="num hidden text-sm text-muted sm:block">
           {new Date().toLocaleDateString("en-NG", {
@@ -50,11 +51,11 @@ export function Dashboard() {
 
       <KpiBand summary={summary} triggeredCount={triggered.length} />
 
-      <div className="grid gap-6 lg:grid-cols-5">
+      <div className="grid gap-3 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <SectorCard sectors={summary.sectors} />
         </div>
-        <div className="grid gap-6 lg:col-span-3 sm:grid-cols-2">
+        <div className="grid gap-3 lg:col-span-3 sm:grid-cols-2">
           <MoversCard
             title="Top gainers"
             icon={<TrendingUp className="size-5 text-gain" />}
@@ -86,7 +87,7 @@ function KpiBand({
   const sentiment = summary.avg_change_percent;
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <Kpi
         icon={<Building2 className="size-4 text-faint" />}
         label="Total market cap"
@@ -164,7 +165,7 @@ function Kpi({
   return (
     <Card
       className={cn(
-        "flex h-full flex-col p-5 transition-shadow hover:shadow-md",
+        "flex h-full flex-col p-5",
         accent && "ring-1 ring-brass/40",
       )}
     >
@@ -301,6 +302,7 @@ function MoversCard({
                   className="flex items-center gap-3 py-2.5 hover:opacity-90"
                 >
                   <span className="num w-4 text-xs text-faint">{i + 1}</span>
+                  <CompanyLogo src={m.logo_url} symbol={m.symbol} size={20} />
                   <div className="min-w-0 flex-1">
                     <p className="num text-sm font-semibold text-ink">{m.symbol}</p>
                     <p className="num truncate text-[11px] text-faint">

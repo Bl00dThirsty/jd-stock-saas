@@ -30,6 +30,7 @@ def serialize_portfolio(portfolio: Portfolio) -> dict:
                 "id": h.id,
                 "symbol": h.stock.symbol,
                 "name": h.stock.name,
+                "logo_url": h.stock.logo_url,
                 "shares": h.shares,
                 "avg_price": h.avg_price,
                 "last_price": last_price,

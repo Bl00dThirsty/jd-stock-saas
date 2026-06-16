@@ -12,6 +12,7 @@ class StockBase(BaseModel):
     symbol: str
     name: str
     sector: str | None = None
+    logo_url: str | None = None
     last_price: float | None = None
     change: float | None = None
     change_percent: float | None = None
@@ -28,6 +29,12 @@ class StockDetail(StockBase):
     week52_high: float | None = None
     week52_low: float | None = None
     last_updated: datetime | None = None
+
+
+class StockRow(StockDetail):
+    """Market-table row: full fundamentals + an optional sparkline series."""
+
+    spark: list[float] = []
 
 
 class PricePoint(BaseModel):
@@ -50,6 +57,7 @@ class StockHistory(BaseModel):
 class MarketMover(BaseModel):
     symbol: str
     name: str
+    logo_url: str | None = None
     last_price: float | None = None
     change: float | None = None
     change_percent: float | None = None

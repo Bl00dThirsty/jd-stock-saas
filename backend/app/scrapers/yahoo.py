@@ -104,6 +104,7 @@ class YahooScraper(BaseScraper):
         except Exception:  # noqa: BLE001
             return {}
         return {
+            "logo_url": info.get("logo_url"),
             "name": info.get("longName") or info.get("shortName"),
             "sector": info.get("sector"),
             "industry": info.get("industry"),

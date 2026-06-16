@@ -151,7 +151,10 @@
   --color-muted: color-mix(in oklab, var(--foreground) 62%, var(--background));
   --color-faint: color-mix(in oklab, var(--foreground) 42%, var(--background));
   --color-line: var(--border);
-  --color-accent: var(--primary);
+  /* NOTE: do NOT override --color-accent here. shadcn's `accent` is the subtle
+     hover/selected surface (light), paired with `accent-foreground` text.
+     Overriding it to --primary made bg-accent + text-accent-foreground render
+     indigo-on-indigo (invisible) across nav, buttons, rails, dialogs. */
 
   /* Financial semantics (green up / red down / amber premium) */
   --color-gain: var(--gain);

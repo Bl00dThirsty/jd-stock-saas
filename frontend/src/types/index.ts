@@ -12,6 +12,7 @@ export interface Stock {
   symbol: string;
   name: string;
   sector: string | null;
+  logo_url: string | null;
   last_price: number | null;
   change: number | null;
   change_percent: number | null;
@@ -28,6 +29,10 @@ export interface StockDetail extends Stock {
   week52_high: number | null;
   week52_low: number | null;
   last_updated: string | null;
+}
+
+export interface StockRow extends StockDetail {
+  spark: number[];
 }
 
 export interface PricePoint {
@@ -48,6 +53,7 @@ export interface StockHistory {
 export interface MarketMover {
   symbol: string;
   name: string;
+  logo_url: string | null;
   last_price: number | null;
   change: number | null;
   change_percent: number | null;
@@ -84,6 +90,7 @@ export interface Holding {
   id: number;
   symbol: string;
   name: string;
+  logo_url: string | null;
   shares: number;
   avg_price: number;
   last_price: number | null;

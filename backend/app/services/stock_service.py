@@ -1,5 +1,7 @@
 """Stock & market business logic."""
 
+from datetime import datetime, timedelta, timezone
+
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,18 +13,30 @@ from app.scrapers.yahoo import YahooScraper
 
 VALID_PERIODS = {"1d", "1w", "1m", "1y", "max"}
 
+# How far back each period window reaches (days). "max" = no limit.
+PERIOD_WINDOW_DAYS: dict[str, int | None] = {
+    "1d": 4,
+    "1w": 8,
+    "1m": 32,
+    "1y": 370,
+    "max": None,
+}
+
 
 async def get_history(
     db: AsyncSession, stock: Stock, period: str
 ) -> list[dict]:
-    """Return candles from the DB, falling back to a live Yahoo fetch."""
-    rows = (
-        await db.scalars(
-            select(PriceHistory)
-            .where(PriceHistory.stock_id == stock.id)
-            .order_by(PriceHistory.timestamp.asc())
-        )
-    ).all()
+    """Return candles from the DB for the requested period window.
+
+    Falls back to a live Yahoo fetch only when nothing is stored.
+    """
+    query = select(PriceHistory).where(PriceHistory.stock_id == stock.id)
+    window = PERIOD_WINDOW_DAYS.get(period)
+    if window is not None:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=window)
+        query = query.where(PriceHistory.timestamp >= cutoff)
+
+    rows = (await db.scalars(query.order_by(PriceHistory.timestamp.asc()))).all()
 
     if rows:
         return [
@@ -154,6 +168,7 @@ async def market_summary(db: AsyncSession, limit: int = 5) -> dict:
         return {
             "symbol": s.symbol,
             "name": s.name,
+            "logo_url": s.logo_url,
             "last_price": s.last_price,
             "change": s.change,
             "change_percent": s.change_percent,

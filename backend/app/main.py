@@ -1,5 +1,6 @@
 """FastAPI application entrypoint."""
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.api.v1.router import api_router
 from app.core.config import settings
 from app.core.redis import redis_client
+from app.core.simulator import run_price_simulator
 
 
 @asynccontextmanager
@@ -18,8 +20,19 @@ async def lifespan(app: FastAPI):
         await redis_client.ping()
     except Exception:  # noqa: BLE001
         pass
+
+    # Dev-only: stream simulated live ticks so the realtime UI is demonstrable.
+    stop = asyncio.Event()
+    sim_task: asyncio.Task | None = None
+    if settings.ENVIRONMENT == "development":
+        sim_task = asyncio.create_task(run_price_simulator(stop))
+
     yield
+
     # Shutdown
+    stop.set()
+    if sim_task is not None:
+        await asyncio.gather(sim_task, return_exceptions=True)
     await redis_client.aclose()
 
 

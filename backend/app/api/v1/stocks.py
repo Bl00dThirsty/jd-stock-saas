@@ -4,12 +4,13 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
 
 from app.core.deps import DbSession
+from app.models.price import PriceHistory
 from app.models.stock import Stock
 from app.schemas.stock import (
     MarketSummary,
-    StockBase,
     StockDetail,
     StockHistory,
+    StockRow,
 )
 from app.services import stock_service
 
@@ -26,13 +27,14 @@ async def _get_stock_or_404(db: DbSession, symbol: str) -> Stock:
     return stock
 
 
-@router.get("", response_model=list[StockBase])
+@router.get("", response_model=list[StockRow])
 async def list_stocks(
     db: DbSession,
     sector: str | None = None,
     search: str | None = None,
-    limit: int = Query(200, le=500),
-) -> list[Stock]:
+    spark: bool = False,
+    limit: int = Query(500, le=500),
+) -> list[StockRow]:
     query = select(Stock)
     if sector:
         query = query.where(Stock.sector == sector)
@@ -40,7 +42,26 @@ async def list_stocks(
         term = f"%{search}%"
         query = query.where(or_(Stock.symbol.ilike(term), Stock.name.ilike(term)))
     query = query.order_by(Stock.symbol).limit(limit)
-    return list((await db.scalars(query)).all())
+    stocks = list((await db.scalars(query)).all())
+
+    spark_map: dict[int, list[float]] = {}
+    if spark and stocks:
+        ids = [s.id for s in stocks]
+        points = await db.scalars(
+            select(PriceHistory)
+            .where(PriceHistory.stock_id.in_(ids))
+            .order_by(PriceHistory.timestamp.asc())
+        )
+        for p in points:
+            spark_map.setdefault(p.stock_id, []).append(round(p.price, 2))
+        spark_map = {sid: series[-24:] for sid, series in spark_map.items()}
+
+    rows: list[StockRow] = []
+    for s in stocks:
+        row = StockRow.model_validate(s)
+        row.spark = spark_map.get(s.id, [])
+        rows.append(row)
+    return rows
 
 
 @router.get("/{symbol}", response_model=StockDetail)

@@ -25,7 +25,7 @@ const NAV = [
 export function AppLayout() {
   const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
-  const { connected } = useWebSocket();
+  const { connected, ticks } = useWebSocket();
 
   return (
     <div className="min-h-dvh bg-background">
@@ -45,7 +45,7 @@ export function AppLayout() {
                 cn(
                   "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-accent text-accent-foreground"
+                    ? "bg-primary/10 text-primary"
                     : "text-muted-foreground hover:text-foreground",
                 )
               }
@@ -91,15 +91,15 @@ export function AppLayout() {
       </header>
 
       {/* ── Main ── */}
-      <main className="px-4 pt-20 pb-28 lg:pt-24 lg:pb-16">
-        <div className="mx-auto max-w-7xl">
+      <main className="px-3 pt-20 pb-28 lg:px-5 lg:pt-24 lg:pb-14">
+        <div className="mx-auto w-full max-w-[1800px]">
           <Outlet />
         </div>
       </main>
 
       {/* ── Desktop: scrolling ticker tape (global footer) ── */}
       <div className="fixed inset-x-0 bottom-0 z-30 hidden lg:block">
-        <TickerBar />
+        <TickerBar ticks={ticks} />
       </div>
 
       {/* ── Mobile / tablet: bottom nav ── */}
@@ -113,7 +113,7 @@ export function AppLayout() {
               cn(
                 "flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors",
                 isActive
-                  ? "bg-accent text-accent-foreground"
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground",
               )
             }

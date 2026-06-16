@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Trash2 } from "lucide-react";
 import { ChangeBadge } from "@/components/ChangeBadge";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { formatNaira, formatNumber, formatSignedNaira } from "@/lib/format";
 import type { Holding } from "@/types";
 
@@ -37,13 +38,18 @@ export function PortfolioTable({ holdings, onDelete, deletingId }: PortfolioTabl
           {holdings.map((h) => (
             <tr key={h.id} className="border-b border-line/60 last:border-0">
               <td className="px-5 py-3">
-                <Link
-                  to={`/stocks/${h.symbol}`}
-                  className="num font-semibold text-ink hover:text-brand-600"
-                >
-                  {h.symbol}
-                </Link>
-                <p className="max-w-[12rem] truncate text-xs text-faint">{h.name}</p>
+                <div className="flex items-center gap-2.5">
+                  <CompanyLogo src={h.logo_url} symbol={h.symbol} size={24} />
+                  <div>
+                    <Link
+                      to={`/stocks/${h.symbol}`}
+                      className="num font-semibold text-ink hover:text-brand-600"
+                    >
+                      {h.symbol}
+                    </Link>
+                    <p className="max-w-[12rem] truncate text-xs text-faint">{h.name}</p>
+                  </div>
+                </div>
               </td>
               <td className="num px-3 py-3 text-right text-ink">{formatNumber(h.shares)}</td>
               <td className="num px-3 py-3 text-right text-muted">

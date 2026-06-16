@@ -23,6 +23,9 @@ class Stock(Base, TimestampMixin):
     sector: Mapped[str | None] = mapped_column(String(128), index=True)
     industry: Mapped[str | None] = mapped_column(String(128))
 
+    # Logo URL (from Yahoo Finance, populated by the profile collector).
+    logo_url: Mapped[str | None] = mapped_column(String(512))
+
     # Snapshot fundamentals (refreshed by the profile collector).
     market_cap: Mapped[float | None] = mapped_column(Float)
     shares_outstanding: Mapped[float | None] = mapped_column(Float)

@@ -10,18 +10,20 @@ import type {
   MarketSummary,
   NewsItem,
   Portfolio,
-  Stock,
   StockDetail,
   StockHistory,
+  StockRow,
 } from "@/types";
 
 /* ─── Market & stocks ─── */
 
-export function useStocks(params: { sector?: string; search?: string } = {}) {
+export function useStocks(
+  params: { sector?: string; search?: string; spark?: boolean } = {},
+) {
   return useQuery({
     queryKey: ["stocks", params],
-    queryFn: async (): Promise<Stock[]> => {
-      const { data } = await api.get<Stock[]>("/stocks", { params });
+    queryFn: async (): Promise<StockRow[]> => {
+      const { data } = await api.get<StockRow[]>("/stocks", { params });
       return data;
     },
     staleTime: 60_000,

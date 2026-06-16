@@ -17,6 +17,7 @@ class HoldingOut(BaseModel):
     id: int
     symbol: str
     name: str
+    logo_url: str | None = None
     shares: float
     avg_price: float
     last_price: float | None = None
