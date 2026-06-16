@@ -25,10 +25,10 @@ export function Login() {
       <section className="relative hidden flex-col justify-between overflow-hidden bg-brand-700 p-12 text-brand-50 lg:flex">
         <div className="flex items-center gap-2">
           <span className="grid size-9 place-items-center rounded-md bg-brand-900 font-display text-lg font-bold text-brand-300">
-            N
+            V
           </span>
           <span className="font-display text-xl font-semibold">
-            NGX<span className="text-brass">·</span>Terminal
+            Vorte<span className="text-brass">x</span>
           </span>
         </div>
 
@@ -66,7 +66,7 @@ export function Login() {
         <div className="w-full max-w-sm">
           <div className="lg:hidden">
             <span className="font-display text-2xl font-semibold text-ink">
-              NGX<span className="text-brass">·</span>Terminal
+              Vorte<span className="text-brass">x</span>
             </span>
           </div>
           <h2 className="mt-6 font-display text-3xl text-ink lg:mt-0">Sign in</h2>
