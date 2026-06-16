@@ -12,7 +12,10 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useLoginPrompt } from "@/store/loginPromptStore";
 import { TickerBar } from "@/components/TickerBar";
+import { LoginPrompt } from "@/components/LoginPrompt";
+import { Button } from "@/components/ui/button";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -23,7 +26,6 @@ const NAV = [
 ];
 
 export function AppLayout() {
-  const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
   const { connected, ticks } = useWebSocket();
 
@@ -60,16 +62,7 @@ export function AppLayout() {
         <div className="flex items-center gap-1">
           <ConnectionDot connected={connected} />
           <ThemeToggle theme={theme} toggle={toggle} />
-          <UserAvatar
-            picture={user?.picture}
-            name={user?.display_name ?? user?.email}
-          />
-          <button
-            onClick={logout}
-            className="text-muted-foreground hover:bg-foreground/5 hover:text-destructive rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-          >
-            Sign out
-          </button>
+          <AuthControls />
         </div>
       </header>
 
@@ -79,14 +72,7 @@ export function AppLayout() {
         <div className="flex items-center gap-1">
           <ConnectionDot connected={connected} />
           <ThemeToggle theme={theme} toggle={toggle} />
-          <UserAvatar picture={user?.picture} name={user?.display_name ?? user?.email} />
-          <button
-            onClick={logout}
-            aria-label="Sign out"
-            className="text-muted-foreground hover:bg-foreground/5 hover:text-destructive rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
-          >
-            Sign out
-          </button>
+          <AuthControls />
         </div>
       </header>
 
@@ -123,7 +109,37 @@ export function AppLayout() {
           </NavLink>
         ))}
       </nav>
+
+      {/* Global "sign in to continue" modal — opened by gated actions / pages. */}
+      <LoginPrompt />
     </div>
+  );
+}
+
+/** Header auth widget: a "Log in" button when signed out, avatar + sign-out when in. */
+function AuthControls() {
+  const { isAuthenticated, user, logout } = useAuth();
+  const requestLogin = useLoginPrompt((s) => s.requestLogin);
+
+  if (!isAuthenticated) {
+    return (
+      <Button size="sm" onClick={() => requestLogin()} className="ml-1">
+        Log in
+      </Button>
+    );
+  }
+
+  return (
+    <>
+      <UserAvatar picture={user?.picture} name={user?.display_name ?? user?.email} />
+      <button
+        onClick={logout}
+        aria-label="Sign out"
+        className="text-muted-foreground hover:bg-foreground/5 hover:text-destructive rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
+      >
+        Sign out
+      </button>
+    </>
   );
 }
 
