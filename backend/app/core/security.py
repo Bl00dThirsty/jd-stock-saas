@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import uuid4
 
+import bcrypt
 from jose import JWTError, jwt
 
 from app.core.config import settings
@@ -12,6 +13,21 @@ from app.core.redis import redis_client
 
 ACCESS = "access"
 REFRESH = "refresh"
+
+# ─── Password hashing (bcrypt) ───────────────────────────────────────────
+
+
+def hash_password(password: str) -> str:
+    """Hash a plaintext password with bcrypt (per-hash random salt)."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(password: str, password_hash: str) -> bool:
+    """Constant-time check of a plaintext password against a bcrypt hash."""
+    try:
+        return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 # ─── Token blacklist helpers (Redis) ────────────────────────────────────
 

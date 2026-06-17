@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
 
+    # ─── Apple OAuth (Sign in with Apple) ───
+    # APPLE_CLIENT_ID is the Services ID (e.g. com.vortex.web). APPLE_PRIVATE_KEY
+    # is the PEM contents of the .p8 key downloaded from the Apple Developer portal.
+    APPLE_CLIENT_ID: str = ""
+    APPLE_TEAM_ID: str = ""
+    APPLE_KEY_ID: str = ""
+    APPLE_PRIVATE_KEY: str = ""
+    APPLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/apple/callback"
+
     # ─── JWT ───
     JWT_SECRET_KEY: str = "change-me"
     JWT_ALGORITHM: str = "HS256"
@@ -49,6 +58,16 @@ class Settings(BaseSettings):
     def sync_database_url(self) -> str:
         """Sync DSN (psycopg) used by Alembic & Celery tasks."""
         return self.DATABASE_URL.replace("+asyncpg", "+psycopg")
+
+    @property
+    def apple_enabled(self) -> bool:
+        """True once all Apple Developer credentials are configured."""
+        return bool(
+            self.APPLE_CLIENT_ID
+            and self.APPLE_TEAM_ID
+            and self.APPLE_KEY_ID
+            and self.APPLE_PRIVATE_KEY
+        )
 
 
 @lru_cache
