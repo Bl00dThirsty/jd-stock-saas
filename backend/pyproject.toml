@@ -21,6 +21,9 @@ dependencies = [
     "pandas>=2.2",
     "itsdangerous>=2.2",
     "python-multipart>=0.0.12",
+    "slowapi>=0.1.9",
+    "pyotp>=2.9",
+    "qrcode[pil]>=7.4",
 ]
 
 [project.optional-dependencies]

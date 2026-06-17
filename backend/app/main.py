@@ -5,11 +5,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.core.redis import redis_client
+from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.simulator import run_price_simulator
 
 
@@ -44,9 +48,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ─── Middleware (order matters: outermost first) ─────────────────────────
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Session middleware is required by authlib for the OAuth state/nonce.
 app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET_KEY)
 
+# Security headers (CSP, HSTS, X-Frame-Options, etc.)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
