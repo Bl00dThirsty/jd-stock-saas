@@ -16,14 +16,35 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/market" element={<Market />} />
-          <Route path="/stocks/:symbol" element={<StockDetail />} />
+      {/* The app shell is always reachable. Market data is browsable by anyone;
+          user-scoped pages sit behind an inline ProtectedRoute gate. */}
+      <Route element={<AppLayout />}>
+        {/* Public — browse freely */}
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/market" element={<Market />} />
+        <Route path="/stocks/:symbol" element={<StockDetail />} />
+        <Route path="/news" element={<News />} />
+
+        {/* Protected — sign in to act */}
+        <Route
+          element={
+            <ProtectedRoute
+              title="Your portfolio is private"
+              description="Sign in to create portfolios and track your holdings across the NGX board."
+            />
+          }
+        >
           <Route path="/portfolio" element={<Portfolio />} />
+        </Route>
+        <Route
+          element={
+            <ProtectedRoute
+              title="Your alerts are private"
+              description="Sign in to set price alerts and get notified when a stock hits your target."
+            />
+          }
+        >
           <Route path="/alerts" element={<Alerts />} />
-          <Route path="/news" element={<News />} />
         </Route>
       </Route>
 
