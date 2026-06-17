@@ -176,10 +176,10 @@ function Wordmark() {
   return (
     <div className="flex items-center gap-2">
       <span className="bg-primary text-primary-foreground font-display grid size-8 place-items-center rounded-lg text-base font-bold">
-        N
+        V
       </span>
       <span className="font-display text-foreground text-lg font-semibold tracking-tight">
-        NGX<span className="text-brass">·</span>Terminal
+        Vorte<span className="text-brass">x</span>
       </span>
     </div>
   );
