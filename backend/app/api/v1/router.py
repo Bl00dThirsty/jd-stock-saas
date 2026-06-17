@@ -2,12 +2,13 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import alerts, auth, news, portfolio, stocks, ws
+from app.api.v1 import admin, alerts, auth, news, portfolio, stocks, ws
 
 api_router = APIRouter()
 
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(auth.users_router, prefix="/users", tags=["users"])
+api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(stocks.router, prefix="/stocks", tags=["stocks"])
 api_router.include_router(stocks.market_router, prefix="/market", tags=["market"])
 api_router.include_router(portfolio.router, prefix="/portfolio", tags=["portfolio"])

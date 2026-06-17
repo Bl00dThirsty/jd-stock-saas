@@ -33,6 +33,30 @@ export function useAuth() {
     window.location.href = `${API_BASE}/auth/google/login`;
   };
 
+  const loginWithApple = () => {
+    // Full-page redirect into the backend's Sign-in-with-Apple flow.
+    window.location.href = `${API_BASE}/auth/apple/login`;
+  };
+
+  // Email + password against the local auth endpoints.
+  const loginWithPassword = async (email: string, password: string) => {
+    const { data } = await api.post("/auth/login", { email, password });
+    setTokens(data.access_token, data.refresh_token);
+  };
+
+  const registerWithPassword = async (
+    email: string,
+    password: string,
+    display_name?: string,
+  ) => {
+    const { data } = await api.post("/auth/register", {
+      email,
+      password,
+      display_name,
+    });
+    setTokens(data.access_token, data.refresh_token);
+  };
+
   // Development-only: skip Google and get a demo session.
   const devLogin = async () => {
     const { data } = await api.post("/auth/dev-login");
@@ -44,6 +68,9 @@ export function useAuth() {
     isAuthenticated: Boolean(accessToken),
     isLoading: Boolean(accessToken) && isLoading,
     login,
+    loginWithApple,
+    loginWithPassword,
+    registerWithPassword,
     devLogin,
     logout,
   };
