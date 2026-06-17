@@ -13,7 +13,8 @@ RUN apt-get update \
 
 # Install Python deps first for better layer caching
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install -e ".[dev]"
+RUN pip install --upgrade pip \
+    && pip install --retries 5 --timeout 120 -e ".[dev]"
 
 COPY . .
 
