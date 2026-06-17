@@ -11,6 +11,7 @@ import { CenteredSpinner } from "@/components/ui/Spinner";
 import { useStocks } from "@/hooks/useStockData";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useFlash } from "@/hooks/useFlash";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { cn } from "@/lib/utils";
 import { formatCompact, formatNaira, formatNumber } from "@/lib/format";
 import type { PriceTick, StockRow } from "@/types";
@@ -52,6 +53,7 @@ export function Market() {
   const { data: stocks, isLoading } = useStocks({ spark: true });
   const { ticks } = useWebSocket();
   const watch = useWatchlist();
+  const requireAuth = useRequireAuth();
   const [search, setSearch] = useState("");
   const [sector, setSector] = useState("all");
   const [tab, setTab] = useState<Tab>("all");
@@ -176,7 +178,12 @@ export function Market() {
                   stock={s}
                   tick={ticks[s.symbol]}
                   starred={watch.set.has(s.symbol)}
-                  onStar={() => watch.toggle(s.symbol)}
+                  onStar={() =>
+                    requireAuth(
+                      () => watch.toggle(s.symbol),
+                      "Sign in to build your watchlist and keep it across devices.",
+                    )
+                  }
                 />
               ))}
             </tbody>

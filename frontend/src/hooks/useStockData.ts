@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { api } from "@/services/api";
+import { useAuthStore } from "@/store/authStore";
 import type {
   Alert,
   AlertDirection,
@@ -68,12 +69,14 @@ export function useMarketSummary() {
 /* ─── Portfolios ─── */
 
 export function usePortfolios() {
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
   return useQuery({
     queryKey: ["portfolios"],
     queryFn: async (): Promise<Portfolio[]> => {
       const { data } = await api.get<Portfolio[]>("/portfolio");
       return data;
     },
+    enabled: isAuthed,
   });
 }
 
@@ -115,12 +118,16 @@ export function useDeleteHolding(portfolioId: number) {
 /* ─── Alerts ─── */
 
 export function useAlerts() {
+  // Used on the public Dashboard too — only fetch when signed in, otherwise the
+  // protected endpoint 401s for anonymous visitors.
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
   return useQuery({
     queryKey: ["alerts"],
     queryFn: async (): Promise<Alert[]> => {
       const { data } = await api.get<Alert[]>("/alerts");
       return data;
     },
+    enabled: isAuthed,
   });
 }
 
