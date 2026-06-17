@@ -31,9 +31,12 @@ class User(Base, TimestampMixin):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    google_id: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True, nullable=False
+    # Nullable: a user may sign up with email/password and have no Google identity.
+    google_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True, default=None
     )
+    # Nullable: OAuth-only users have no local password.
+    password_hash: Mapped[str | None] = mapped_column(String(255), default=None)
     display_name: Mapped[str | None] = mapped_column(String(255))
     picture: Mapped[str | None] = mapped_column(String(512))
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False)

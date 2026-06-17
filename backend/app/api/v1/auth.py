@@ -30,14 +30,22 @@ from app.core.security import (
 )
 from app.models.user import User, UserRole
 from app.schemas.auth import (
+    LoginRequest,
     RefreshRequest,
+    RegisterRequest,
     TokenPair,
     TwoFactorEnableRequest,
     TwoFactorSetupResponse,
     TwoFactorVerifyRequest,
 )
 from app.schemas.user import UserDataExport, UserOut, UserUpdate
-from app.services.user_service import get_or_create_from_google
+from app.services.user_service import (
+    authenticate,
+    create_with_password,
+    email_exists,
+    get_or_create_from_apple,
+    get_or_create_from_google,
+)
 
 router = APIRouter()
 users_router = APIRouter()
@@ -138,6 +146,71 @@ async def dev_login(
     return TokenPair(access_token=access, refresh_token=refresh)
 
 
+@router.post("/register", response_model=TokenPair, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
+async def register(
+    request: Request,
+    body: RegisterRequest,
+    db: DbSession,
+    client_ip: ClientIP,
+    user_agent: UserAgent,
+) -> TokenPair:
+    """Create an account with email + password and return a token pair."""
+    if await email_exists(db, body.email):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists.",
+        )
+
+    user = await create_with_password(db, body.email, body.password, body.display_name)
+
+    access = create_access_token(str(user.id))
+    refresh, _ = await create_refresh_token_rotated(str(user.id))
+
+    await log_action(
+        db, user.id, "register", "user", str(user.id), client_ip, user_agent, "email-password"
+    )
+    return TokenPair(access_token=access, refresh_token=refresh)
+
+
+@router.post("/login", response_model=TokenPair)
+@limiter.limit("10/minute")
+async def login(
+    request: Request,
+    body: LoginRequest,
+    db: DbSession,
+    client_ip: ClientIP,
+    user_agent: UserAgent,
+) -> TokenPair:
+    """Authenticate with email + password and return a token pair."""
+    bf_id = f"{client_ip}:{body.email}"
+    await check_brute_force(bf_id)
+
+    user = await authenticate(db, body.email, body.password)
+    if user is None:
+        await record_failed_attempt(bf_id)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+        )
+
+    # 2FA gate — mirrors the Google flow.
+    if user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="2FA code required. Use /auth/2fa/verify.",
+        )
+
+    access = create_access_token(str(user.id))
+    refresh, _ = await create_refresh_token_rotated(str(user.id))
+
+    await clear_failed_attempts(bf_id)
+    await log_action(
+        db, user.id, "login", "user", str(user.id), client_ip, user_agent, "email-password"
+    )
+    return TokenPair(access_token=access, refresh_token=refresh)
+
+
 @router.get("/google/login")
 async def google_login(request: Request):
     """Kick off the Google OAuth flow."""
@@ -183,6 +256,69 @@ async def google_callback(
 
     await clear_failed_attempts(bf_id)
     await log_action(db, user.id, "login", "user", str(user.id), client_ip, user_agent, "google-oauth")
+
+    redirect_url = (
+        f"{settings.FRONTEND_URL}/auth/callback"
+        f"#access_token={access}&refresh_token={refresh}"
+    )
+    return RedirectResponse(url=redirect_url)
+
+
+@router.get("/apple/login")
+async def apple_login(request: Request):
+    """Kick off the Sign-in-with-Apple flow (requires Apple credentials)."""
+    if not settings.apple_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Apple sign-in is not configured.",
+        )
+    return await oauth.apple.authorize_redirect(request, settings.APPLE_REDIRECT_URI)
+
+
+@router.api_route("/apple/callback", methods=["GET", "POST"])
+async def apple_callback(
+    request: Request,
+    db: DbSession,
+    client_ip: ClientIP,
+    user_agent: UserAgent,
+):
+    """Apple OAuth callback (Apple POSTs via form_post)."""
+    if not settings.apple_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Apple sign-in is not configured.",
+        )
+    try:
+        token = await oauth.apple.authorize_access_token(request)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Apple OAuth exchange failed: {exc}",
+        ) from exc
+
+    claims = token.get("userinfo") or {}
+    email = claims.get("email")
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Apple did not return an email address.",
+        )
+
+    user = await get_or_create_from_apple(db, email)
+    await db.flush()
+
+    if user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="2FA code required. Use /auth/2fa/verify.",
+        )
+
+    access = create_access_token(str(user.id))
+    refresh, _ = await create_refresh_token_rotated(str(user.id))
+
+    await log_action(
+        db, user.id, "login", "user", str(user.id), client_ip, user_agent, "apple-oauth"
+    )
 
     redirect_url = (
         f"{settings.FRONTEND_URL}/auth/callback"
