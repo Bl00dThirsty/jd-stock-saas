@@ -4,7 +4,10 @@ from datetime import datetime, timezone
 
 import yfinance as yf
 
+from app.core.logging import get_logger
 from app.scrapers.base import BaseScraper, Candle, Quote
+
+logger = get_logger(__name__)
 
 SUFFIX = ".LAGOS"
 
@@ -70,38 +73,49 @@ class YahooScraper(BaseScraper):
                         timestamp=now,
                     )
                 )
-            except (KeyError, IndexError, ValueError):
+            except (KeyError, IndexError, ValueError) as exc:
+                logger.debug("Could not parse Yahoo quote for %s: %s", symbol, exc)
                 continue
         return quotes
 
     def fetch_history(self, symbol: str, period: str, interval: str) -> list[Candle]:
-        yperiod, yinterval = HISTORY_PRESETS.get(period, (period, interval))
-        frame = yf.download(
-            tickers=to_yahoo(symbol),
-            period=yperiod,
-            interval=yinterval,
-            auto_adjust=False,
-            progress=False,
-        ).dropna()
+        """Return daily candles from Yahoo Finance.
 
-        candles: list[Candle] = []
-        for ts, row in frame.iterrows():
-            candles.append(
-                Candle(
-                    timestamp=ts.to_pydatetime(),
-                    price=float(row["Close"]),
-                    open=float(row["Open"]),
-                    high=float(row["High"]),
-                    low=float(row["Low"]),
-                    volume=float(row["Volume"]),
+        Returns an empty list (never raises) so callers can always iterate
+        the result without an outer try/except.
+        """
+        try:
+            yperiod, yinterval = HISTORY_PRESETS.get(period, (period, interval))
+            frame = yf.download(
+                tickers=to_yahoo(symbol),
+                period=yperiod,
+                interval=yinterval,
+                auto_adjust=False,
+                progress=False,
+            ).dropna()
+
+            candles: list[Candle] = []
+            for ts, row in frame.iterrows():
+                candles.append(
+                    Candle(
+                        timestamp=ts.to_pydatetime(),
+                        price=float(row["Close"]),
+                        open=float(row["Open"]),
+                        high=float(row["High"]),
+                        low=float(row["Low"]),
+                        volume=float(row["Volume"]),
+                    )
                 )
-            )
-        return candles
+            return candles
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("fetch_history failed for %s (period=%s): %s", symbol, period, exc)
+            return []
 
     def fetch_profile(self, symbol: str) -> dict:
         try:
             info = yf.Ticker(to_yahoo(symbol)).info
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("fetch_profile failed for %s: %s", symbol, exc)
             return {}
         return {
             "logo_url": info.get("logo_url"),

@@ -9,11 +9,14 @@ from datetime import datetime, timezone
 import yfinance as yf
 from sqlalchemy import select
 
+from app.core.logging import get_logger
 from app.core.sync_db import SyncSessionLocal
 from app.models.news import News
 from app.models.stock import Stock
 from app.scrapers.yahoo import to_yahoo
 from app.tasks.celery_app import celery_app
+
+logger = get_logger(__name__)
 
 # Keep the per-run scope small to respect rate limits.
 NEWS_BATCH = 15
@@ -60,6 +63,7 @@ def collect_news() -> dict:
                 added += 1
 
         db.commit()
+        logger.info("collect_news: %d articles added", added)
         return {"added": added}
 
 
