@@ -26,9 +26,11 @@ dependencies = [
     "pyotp>=2.9",
     "qrcode[pil]>=7.4",
     "bcrypt>=4.1",
+    "fpdf2>=2.8",
 ]
 
 [project.optional-dependencies]
+pdf = ["weasyprint>=62"]
 dev = [
     "pytest>=8.3",
     "pytest-asyncio>=0.24",

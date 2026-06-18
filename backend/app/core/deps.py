@@ -1,7 +1,7 @@
 """Reusable FastAPI dependencies (auth / current user / RBAC)."""
 
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import ACCESS, decode_token
+from app.models.session import UserSession
 from app.models.user import User, UserRole
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -46,6 +47,28 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_current_payload(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+) -> dict[str, Any]:
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    payload = decode_token(credentials.credentials, expected_type=ACCESS)
+    if payload is None or "sub" not in payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return payload
+
+
+TokenPayload = Annotated[dict[str, Any], Depends(get_current_payload)]
 
 
 def require_role(min_role: UserRole) -> Callable:

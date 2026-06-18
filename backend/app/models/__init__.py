@@ -11,6 +11,7 @@ from app.models.news import News
 from app.models.object_history import ObjectHistory
 from app.models.portfolio import Portfolio, PortfolioHolding
 from app.models.price import PriceHistory
+from app.models.session import UserSession
 from app.models.stock import Stock
 from app.models.stock_attribute import StockAttribute, StockAttributeDef
 from app.models.stock_status_history import StockStatusHistory
@@ -18,6 +19,7 @@ from app.models.user import User
 
 __all__ = [
     "User",
+    "UserSession",
     "Stock",
     "PriceHistory",
     "Portfolio",

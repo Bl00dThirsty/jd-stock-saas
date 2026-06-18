@@ -141,3 +141,18 @@ export interface PriceTick {
   volume: number | null;
   timestamp: string;
 }
+
+export interface UserSession {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  last_activity_at: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  is_active: boolean;
+}
+
+export interface ConsentStatus {
+  consent_given: boolean;
+  consent_given_at: string | null;
+}

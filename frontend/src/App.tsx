@@ -9,6 +9,8 @@ import { StockDetail } from "@/pages/StockDetail";
 import { Portfolio } from "@/pages/Portfolio";
 import { Alerts } from "@/pages/Alerts";
 import { News } from "@/pages/News";
+import { Sessions } from "@/pages/Sessions";
+import { Privacy } from "@/pages/Privacy";
 
 export default function App() {
   return (
@@ -45,6 +47,26 @@ export default function App() {
           }
         >
           <Route path="/alerts" element={<Alerts />} />
+        </Route>
+        <Route
+          element={
+            <ProtectedRoute
+              title="Session management"
+              description="Sign in to view and manage your active sessions."
+            />
+          }
+        >
+          <Route path="/sessions" element={<Sessions />} />
+        </Route>
+        <Route
+          element={
+            <ProtectedRoute
+              title="Privacy settings"
+              description="Sign in to manage your data and privacy preferences."
+            />
+          }
+        >
+          <Route path="/privacy" element={<Privacy />} />
         </Route>
       </Route>
 

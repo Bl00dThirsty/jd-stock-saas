@@ -20,6 +20,7 @@ class UserOut(BaseModel):
     email_verified: bool
     role: UserRole
     totp_enabled: bool
+    consent_given_at: datetime | None = None
     created_at: datetime
 
 
