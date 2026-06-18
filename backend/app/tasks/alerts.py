@@ -3,9 +3,12 @@
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
+from app.core.logging import get_logger
 from app.core.sync_db import SyncSessionLocal
 from app.models.alert import AlertDirection, PriceAlert
 from app.tasks.celery_app import celery_app
+
+logger = get_logger(__name__)
 
 
 @celery_app.task(name="app.tasks.alerts.check_alerts")
@@ -33,4 +36,8 @@ def check_alerts() -> dict:
                 triggered += 1
 
         db.commit()
+        if triggered:
+            logger.info("check_alerts: %d triggered out of %d checked", triggered, len(alerts))
+        else:
+            logger.debug("check_alerts: 0 triggered, %d checked", len(alerts))
         return {"triggered": triggered, "checked": len(alerts)}

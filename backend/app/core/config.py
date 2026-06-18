@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # ─── Logging ───
+    LOG_LEVEL: str = "info"  # debug | info | warning | error | critical
+
     # ─── Market data ───
     NGXPULSE_API_KEY: str = ""
     NGXPULSE_BASE_URL: str = "https://www.ngxpulse.ng/api/ngxdata"

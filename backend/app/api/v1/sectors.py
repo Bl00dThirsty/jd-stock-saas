@@ -4,9 +4,11 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import case, func, select
 
 from app.core.deps import DbSession
+from app.core.logging import get_logger
 from app.models.stock import Stock
 from app.schemas.analytics import SectorDetailOut, SectorStockRow
 
+logger = get_logger(__name__)
 router = APIRouter()
 
 

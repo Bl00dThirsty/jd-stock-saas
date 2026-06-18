@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
 
 from app.core.deps import DbSession
+from app.core.logging import get_logger
 from app.models.price import PriceHistory
 from app.models.stock import Stock
 from app.schemas.analytics import ReturnMetricsOut, SRLevelOut, StockAnalyticsOut, VolumeAnomalyOut
@@ -22,6 +23,8 @@ from app.services.analytics_service import (
     compute_support_resistance,
     compute_volume_anomaly,
 )
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 market_router = APIRouter()
@@ -141,7 +144,12 @@ async def get_analytics(db: DbSession, symbol: str) -> StockAnalyticsOut:
         vol_anomaly = VolumeAnomalyOut(**asdict(va))
 
     sr_raw = compute_support_resistance(prices, timestamps)
-    sr_levels = [SRLevelOut(**asdict(l)) for l in sr_raw]
+    sr_levels = [SRLevelOut(**asdict(lv)) for lv in sr_raw]
+
+    logger.debug(
+        "Analytics for %s: %d periods, vol_anomaly=%s, %d S/R levels",
+        symbol, len(returns), vol_anomaly is not None, len(sr_levels),
+    )
 
     return StockAnalyticsOut(
         symbol=stock.symbol,
