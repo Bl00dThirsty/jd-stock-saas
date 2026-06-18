@@ -11,6 +11,8 @@ import { Alerts } from "@/pages/Alerts";
 import { News } from "@/pages/News";
 import { Sessions } from "@/pages/Sessions";
 import { Privacy } from "@/pages/Privacy";
+import { Watchlists } from "@/pages/Watchlists";
+import { Screener } from "@/pages/Screener";
 
 export default function App() {
   return (
@@ -26,6 +28,7 @@ export default function App() {
         <Route path="/market" element={<Market />} />
         <Route path="/stocks/:symbol" element={<StockDetail />} />
         <Route path="/news" element={<News />} />
+        <Route path="/screener" element={<Screener />} />
 
         {/* Protected — sign in to act */}
         <Route
@@ -67,6 +70,16 @@ export default function App() {
           }
         >
           <Route path="/privacy" element={<Privacy />} />
+        </Route>
+        <Route
+          element={
+            <ProtectedRoute
+              title="Your watchlists are private"
+              description="Sign in to create named watchlists and track your favourite stocks."
+            />
+          }
+        >
+          <Route path="/watchlists" element={<Watchlists />} />
         </Route>
       </Route>
 

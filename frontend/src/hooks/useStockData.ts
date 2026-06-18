@@ -11,9 +11,12 @@ import type {
   MarketSummary,
   NewsItem,
   Portfolio,
+  ScreenerResult,
   StockDetail,
   StockHistory,
   StockRow,
+  Watchlist,
+  WatchlistSummary,
 } from "@/types";
 
 /* ─── Market & stocks ─── */
@@ -174,5 +177,134 @@ export function useNews(params: { stock?: string; sector?: string } = {}) {
       const { data } = await api.get<NewsItem[]>("/news", { params });
       return data;
     },
+  });
+}
+
+/* ─── Watchlists ─── */
+
+export function useWatchlists() {
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
+  return useQuery({
+    queryKey: ["watchlists"],
+    queryFn: async (): Promise<WatchlistSummary[]> => {
+      const { data } = await api.get<WatchlistSummary[]>("/watchlists");
+      return data;
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useWatchlist(id: number | null) {
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
+  return useQuery({
+    queryKey: ["watchlist", id],
+    queryFn: async (): Promise<Watchlist> => {
+      const { data } = await api.get<Watchlist>(`/watchlists/${id}`);
+      return data;
+    },
+    enabled: isAuthed && id !== null,
+  });
+}
+
+export function useDefaultWatchlist() {
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
+  return useQuery({
+    queryKey: ["watchlist", "default"],
+    queryFn: async (): Promise<Watchlist> => {
+      const { data } = await api.get<Watchlist>("/watchlists/default");
+      return data;
+    },
+    enabled: isAuthed,
+  });
+}
+
+export function useCreateWatchlist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string): Promise<Watchlist> => {
+      const { data } = await api.post<Watchlist>("/watchlists", { name });
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlists"] }),
+  });
+}
+
+export function useRenameWatchlist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: number; name: string }): Promise<WatchlistSummary> => {
+      const { data } = await api.patch<WatchlistSummary>(`/watchlists/${id}`, { name });
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["watchlists"] }),
+  });
+}
+
+export function useDeleteWatchlist() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => api.delete(`/watchlists/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["watchlists"] });
+    },
+  });
+}
+
+export function useWatchlistToggle() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      watchlistId,
+      symbol,
+      add,
+    }: {
+      watchlistId: number;
+      symbol: string;
+      add: boolean;
+    }): Promise<void> => {
+      if (add) {
+        await api.post(`/watchlists/${watchlistId}/items/${symbol}`);
+      } else {
+        await api.delete(`/watchlists/${watchlistId}/items/${symbol}`);
+      }
+    },
+    onSuccess: (_d, { watchlistId }) => {
+      qc.invalidateQueries({ queryKey: ["watchlist", watchlistId] });
+      qc.invalidateQueries({ queryKey: ["watchlist", "default"] });
+      qc.invalidateQueries({ queryKey: ["watchlists"] });
+    },
+  });
+}
+
+/* ─── Screener ─── */
+
+export interface ScreenerParams {
+  sector?: string;
+  pe_min?: number;
+  pe_max?: number;
+  cap_min?: number;
+  cap_max?: number;
+  vol_min?: number;
+  div_yield_min?: number;
+  change_pct_min?: number;
+  change_pct_max?: number;
+  week52_pct_from_high?: number;
+  sort_by?: string;
+  sort_dir?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
+}
+
+export function useScreener(params: ScreenerParams) {
+  return useQuery({
+    queryKey: ["screener", params],
+    queryFn: async (): Promise<ScreenerResult> => {
+      const cleaned = Object.fromEntries(
+        Object.entries(params).filter(([, v]) => v !== undefined && v !== "" && v !== null),
+      );
+      const { data } = await api.get<ScreenerResult>("/screener", { params: cleaned });
+      return data;
+    },
+    staleTime: 60_000,
   });
 }

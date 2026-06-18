@@ -15,6 +15,7 @@ from app.models.common import TimestampMixin
 if TYPE_CHECKING:
     from app.models.alert import PriceAlert
     from app.models.portfolio import Portfolio
+    from app.models.watchlist import Watchlist
 
 
 class UserRole(str, enum.Enum):
@@ -56,5 +57,8 @@ class User(Base, TimestampMixin):
         back_populates="user", cascade="all, delete-orphan"
     )
     alerts: Mapped[list["PriceAlert"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    watchlists: Mapped[list["Watchlist"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
