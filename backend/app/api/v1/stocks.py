@@ -1,11 +1,15 @@
 """Stock & market endpoints."""
 
+from dataclasses import asdict
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
 
 from app.core.deps import DbSession
 from app.models.price import PriceHistory
 from app.models.stock import Stock
+from app.schemas.analytics import ReturnMetricsOut, SRLevelOut, StockAnalyticsOut, VolumeAnomalyOut
 from app.schemas.stock import (
     MarketSummary,
     StockDetail,
@@ -13,6 +17,11 @@ from app.schemas.stock import (
     StockRow,
 )
 from app.services import stock_service
+from app.services.analytics_service import (
+    compute_return_metrics,
+    compute_support_resistance,
+    compute_volume_anomaly,
+)
 
 router = APIRouter()
 market_router = APIRouter()
@@ -93,6 +102,53 @@ async def get_financials(db: DbSession, symbol: str) -> dict:
         "week52_high": stock.week52_high,
         "week52_low": stock.week52_low,
     }
+
+
+@router.get("/{symbol}/analytics", response_model=StockAnalyticsOut)
+async def get_analytics(db: DbSession, symbol: str) -> StockAnalyticsOut:
+    stock = await _get_stock_or_404(db, symbol)
+    all_prices = list(
+        (await db.scalars(
+            select(PriceHistory)
+            .where(PriceHistory.stock_id == stock.id)
+            .order_by(PriceHistory.timestamp.asc())
+        )).all()
+    )
+
+    prices = [p.price for p in all_prices]
+    timestamps = [p.timestamp for p in all_prices]
+    volumes = [p.volume or 0.0 for p in all_prices]
+
+    now = datetime.now(timezone.utc)
+
+    period_windows: dict[str, int | None] = {"1y": 365, "3y": 1095, "5y": 1825, "max": None}
+    returns: list[ReturnMetricsOut] = []
+    for period_name, days in period_windows.items():
+        if days:
+            cutoff = now - timedelta(days=days)
+            idx = next((i for i, t in enumerate(timestamps) if t >= cutoff), None)
+            if idx is None or len(prices) - idx < 2:
+                continue
+            p_slice, t_slice = prices[idx:], timestamps[idx:]
+        else:
+            p_slice, t_slice = prices, timestamps
+        m = compute_return_metrics(p_slice, t_slice, period_name)
+        returns.append(ReturnMetricsOut(**asdict(m)))
+
+    vol_anomaly: VolumeAnomalyOut | None = None
+    if volumes and volumes[-1]:
+        va = compute_volume_anomaly(volumes[-1], volumes[:-1])
+        vol_anomaly = VolumeAnomalyOut(**asdict(va))
+
+    sr_raw = compute_support_resistance(prices, timestamps)
+    sr_levels = [SRLevelOut(**asdict(l)) for l in sr_raw]
+
+    return StockAnalyticsOut(
+        symbol=stock.symbol,
+        returns=returns,
+        volume_anomaly=vol_anomaly,
+        support_resistance=sr_levels,
+    )
 
 
 @market_router.get("/summary", response_model=MarketSummary)
