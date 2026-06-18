@@ -1,12 +1,16 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Bell,
   Briefcase,
   LayoutDashboard,
   LineChart,
+  LogOut,
   Moon,
   Newspaper,
+  Shield,
   Sun,
+  UserCog,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -116,10 +120,10 @@ export function AppLayout() {
   );
 }
 
-/** Header auth widget: a "Log in" button when signed out, avatar + sign-out when in. */
 function AuthControls() {
   const { isAuthenticated, user, logout } = useAuth();
   const requestLogin = useLoginPrompt((s) => s.requestLogin);
+  const [open, setOpen] = useState(false);
 
   if (!isAuthenticated) {
     return (
@@ -130,16 +134,45 @@ function AuthControls() {
   }
 
   return (
-    <>
-      <UserAvatar picture={user?.picture} name={user?.display_name ?? user?.email} />
+    <div className="relative">
       <button
-        onClick={logout}
-        aria-label="Sign out"
-        className="text-muted-foreground hover:bg-foreground/5 hover:text-destructive rounded-full px-3 py-1.5 text-sm font-medium transition-colors"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-foreground/5 hover:text-foreground transition-colors"
       >
-        Sign out
+        <UserAvatar picture={user?.picture} name={user?.display_name ?? user?.email} />
+        <span className="hidden lg:inline">{user?.display_name ?? user?.email}</span>
       </button>
-    </>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border bg-card p-1.5 shadow-lg">
+            <DropdownItem to="/sessions" icon={Shield} label="Sessions" onClick={() => setOpen(false)} />
+            <DropdownItem to="/privacy" icon={UserCog} label="Privacy & Data" onClick={() => setOpen(false)} />
+            <div className="my-1 border-t" />
+            <button
+              onClick={() => { logout(); setOpen(false); }}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            >
+              <LogOut className="size-4" />
+              Sign out
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function DropdownItem({ to, icon: Icon, label, onClick }: { to: string; icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void }) {
+  const navigate = useNavigate();
+  return (
+    <button
+      onClick={() => { navigate(to); onClick(); }}
+      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+    >
+      <Icon className="size-4" />
+      {label}
+    </button>
   );
 }
 

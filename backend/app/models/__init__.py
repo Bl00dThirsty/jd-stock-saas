@@ -9,11 +9,13 @@ from app.models.audit_log import AuditLog
 from app.models.news import News
 from app.models.portfolio import Portfolio, PortfolioHolding
 from app.models.price import PriceHistory
+from app.models.session import UserSession
 from app.models.stock import Stock
 from app.models.user import User
 
 __all__ = [
     "User",
+    "UserSession",
     "Stock",
     "PriceHistory",
     "Portfolio",

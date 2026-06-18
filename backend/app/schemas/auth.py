@@ -41,5 +41,17 @@ class TwoFactorEnableRequest(BaseModel):
 class SessionOut(BaseModel):
     id: str
     created_at: str
+    updated_at: str
+    last_activity_at: str | None = None
     ip_address: str | None = None
     user_agent: str | None = None
+    is_active: bool = True
+
+
+class DeleteAccountRequest(BaseModel):
+    confirmation: str = Field(min_length=1, max_length=100)
+
+
+class ConsentStatus(BaseModel):
+    consent_given: bool
+    consent_given_at: str | None = None
