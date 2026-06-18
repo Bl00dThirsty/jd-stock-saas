@@ -12,6 +12,8 @@ import type {
   NewsItem,
   Portfolio,
   ScreenerResult,
+  SectorDetail,
+  StockAnalytics,
   StockDetail,
   StockHistory,
   StockRow,
@@ -293,6 +295,33 @@ export interface ScreenerParams {
   sort_dir?: "asc" | "desc";
   limit?: number;
   offset?: number;
+}
+
+/* ─── Analytics ─── */
+
+export function useStockAnalytics(symbol: string) {
+  return useQuery({
+    queryKey: ["analytics", symbol],
+    queryFn: async (): Promise<StockAnalytics> => {
+      const { data } = await api.get<StockAnalytics>(`/stocks/${symbol}/analytics`);
+      return data;
+    },
+    enabled: Boolean(symbol),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/* ─── Sectors ─── */
+
+export function useSectors() {
+  return useQuery({
+    queryKey: ["sectors"],
+    queryFn: async (): Promise<SectorDetail[]> => {
+      const { data } = await api.get<SectorDetail[]>("/sectors");
+      return data;
+    },
+    staleTime: 60_000,
+  });
 }
 
 export function useScreener(params: ScreenerParams) {

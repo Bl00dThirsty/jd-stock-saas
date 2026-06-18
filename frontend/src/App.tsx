@@ -13,6 +13,7 @@ import { Sessions } from "@/pages/Sessions";
 import { Privacy } from "@/pages/Privacy";
 import { Watchlists } from "@/pages/Watchlists";
 import { Screener } from "@/pages/Screener";
+import { Sectors } from "@/pages/Sectors";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/stocks/:symbol" element={<StockDetail />} />
         <Route path="/news" element={<News />} />
         <Route path="/screener" element={<Screener />} />
+        <Route path="/sectors" element={<Sectors />} />
 
         {/* Protected — sign in to act */}
         <Route

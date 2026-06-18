@@ -184,3 +184,66 @@ export interface ScreenerResult {
   total: number;
   stocks: StockRow[];
 }
+
+export interface ReturnMetrics {
+  period: string;
+  total_return_pct: number;
+  cagr_pct: number;
+  annualized_vol_pct: number;
+  sharpe_ratio: number;
+  max_drawdown_pct: number;
+  max_drawdown_start: string | null;
+  max_drawdown_end: string | null;
+  best_day_pct: number;
+  worst_day_pct: number;
+  trading_days: number;
+  data_sufficient: boolean;
+}
+
+export interface VolumeAnomaly {
+  z_score: number;
+  avg_volume_20d: number;
+  current_volume: number;
+  is_anomaly: boolean;
+  direction: "spike" | "drought" | "normal";
+}
+
+export interface SRLevel {
+  price: number;
+  strength: number;
+  level_type: "support" | "resistance";
+  distance_pct: number;
+}
+
+export interface StockAnalytics {
+  symbol: string;
+  returns: ReturnMetrics[];
+  volume_anomaly: VolumeAnomaly | null;
+  support_resistance: SRLevel[];
+}
+
+export interface SectorStockRow {
+  symbol: string;
+  name: string;
+  logo_url: string | null;
+  last_price: number | null;
+  change_percent: number | null;
+  market_cap: number | null;
+  volume: number | null;
+}
+
+export interface SectorDetail {
+  sector: string;
+  stock_count: number;
+  avg_change_percent: number;
+  advancers: number;
+  decliners: number;
+  unchanged: number;
+  total_market_cap: number;
+  total_volume: number;
+  avg_pe_ratio: number | null;
+  avg_dividend_yield: number | null;
+  top_by_cap: SectorStockRow[];
+  top_gainers: SectorStockRow[];
+  top_losers: SectorStockRow[];
+}
