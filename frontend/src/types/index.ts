@@ -156,3 +156,31 @@ export interface ConsentStatus {
   consent_given: boolean;
   consent_given_at: string | null;
 }
+
+export interface WatchlistItem {
+  id: number;
+  stock_id: number;
+  added_at: string;
+  stock: StockRow;
+}
+
+export interface WatchlistSummary {
+  id: number;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+  item_count: number;
+}
+
+export interface Watchlist {
+  id: number;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+  items: WatchlistItem[];
+}
+
+export interface ScreenerResult {
+  total: number;
+  stocks: StockRow[];
+}

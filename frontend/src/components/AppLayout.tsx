@@ -9,6 +9,8 @@ import {
   Moon,
   Newspaper,
   Shield,
+  SlidersHorizontal,
+  Star,
   Sun,
   UserCog,
 } from "lucide-react";
@@ -24,6 +26,8 @@ import { Button } from "@/components/ui/button";
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/market", label: "Market", icon: LineChart, end: false },
+  { to: "/screener", label: "Screener", icon: SlidersHorizontal, end: false },
+  { to: "/watchlists", label: "Watchlists", icon: Star, end: false },
   { to: "/portfolio", label: "Portfolio", icon: Briefcase, end: false },
   { to: "/alerts", label: "Alerts", icon: Bell, end: false },
   { to: "/news", label: "News", icon: Newspaper, end: false },

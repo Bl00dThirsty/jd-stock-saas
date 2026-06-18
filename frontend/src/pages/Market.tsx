@@ -8,7 +8,8 @@ import { CompanyLogo } from "@/components/CompanyLogo";
 import { Sparkline } from "@/components/Sparkline";
 import { ChangeBadge } from "@/components/ChangeBadge";
 import { CenteredSpinner } from "@/components/ui/Spinner";
-import { useStocks } from "@/hooks/useStockData";
+import { useDefaultWatchlist, useStocks, useWatchlistToggle } from "@/hooks/useStockData";
+import { useAuthStore } from "@/store/authStore";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useFlash } from "@/hooks/useFlash";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -49,10 +50,28 @@ function useWatchlist() {
   return { set, toggle };
 }
 
+function useServerWatchlist() {
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
+  const { data: wl } = useDefaultWatchlist();
+  const toggle = useWatchlistToggle();
+  const symbols = new Set((wl?.items ?? []).map((i) => i.stock.symbol));
+  return {
+    set: symbols,
+    toggle: (sym: string) => {
+      if (!wl) return;
+      toggle.mutate({ watchlistId: wl.id, symbol: sym, add: !symbols.has(sym) });
+    },
+    ready: isAuthed,
+  };
+}
+
 export function Market() {
   const { data: stocks, isLoading } = useStocks({ spark: true });
   const { ticks } = useWebSocket();
-  const watch = useWatchlist();
+  const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
+  const localWatch = useWatchlist();
+  const serverWatch = useServerWatchlist();
+  const watch = isAuthed ? serverWatch : localWatch;
   const requireAuth = useRequireAuth();
   const [search, setSearch] = useState("");
   const [sector, setSector] = useState("all");

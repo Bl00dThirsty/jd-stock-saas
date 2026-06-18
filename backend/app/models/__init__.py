@@ -16,6 +16,7 @@ from app.models.stock import Stock
 from app.models.stock_attribute import StockAttribute, StockAttributeDef
 from app.models.stock_status_history import StockStatusHistory
 from app.models.user import User
+from app.models.watchlist import Watchlist, WatchlistItem
 
 __all__ = [
     "User",
@@ -33,4 +34,6 @@ __all__ = [
     "StockAttributeDef",
     "StockStatusHistory",
     "ObjectHistory",
+    "Watchlist",
+    "WatchlistItem",
 ]
