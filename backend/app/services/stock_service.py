@@ -6,10 +6,13 @@ from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.logging import get_logger
 from app.models.price import PriceHistory
 from app.models.stock import Stock
 from app.scrapers.base import Candle
 from app.scrapers.yahoo import YahooScraper
+
+logger = get_logger(__name__)
 
 VALID_PERIODS = {"1d", "1w", "1m", "1y", "max"}
 
@@ -51,7 +54,8 @@ async def get_history(
             for r in rows
         ]
 
-    # No stored history yet → fetch live (off the event loop).
+    # No stored history → fetch live (off the event loop).
+    logger.debug("No DB history for %s (period=%s) — fetching from Yahoo", stock.symbol, period)
     scraper = YahooScraper()
     candles: list[Candle] = await run_in_threadpool(
         scraper.fetch_history, stock.symbol, period, "1d"

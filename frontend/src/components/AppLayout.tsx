@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Bell,
   Briefcase,
   LayoutDashboard,
   LineChart,
   LogOut,
+  MoreHorizontal,
   Moon,
   Newspaper,
   PieChart,
@@ -14,6 +15,7 @@ import {
   Star,
   Sun,
   UserCog,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +26,7 @@ import { TickerBar } from "@/components/TickerBar";
 import { LoginPrompt } from "@/components/LoginPrompt";
 import { Button } from "@/components/ui/button";
 
+// Desktop pill nav — all items
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/market", label: "Market", icon: LineChart, end: false },
@@ -33,6 +36,21 @@ const NAV = [
   { to: "/portfolio", label: "Portfolio", icon: Briefcase, end: false },
   { to: "/alerts", label: "Alerts", icon: Bell, end: false },
   { to: "/news", label: "News", icon: Newspaper, end: false },
+];
+
+// Mobile bottom bar — 4 primary tabs + More
+const PRIMARY_NAV = [
+  { to: "/", label: "Home", icon: LayoutDashboard, end: true },
+  { to: "/market", label: "Market", icon: LineChart, end: false },
+  { to: "/watchlists", label: "Watchlists", icon: Star, end: false },
+  { to: "/portfolio", label: "Portfolio", icon: Briefcase, end: false },
+];
+
+const MORE_NAV = [
+  { to: "/screener", label: "Screener", icon: SlidersHorizontal },
+  { to: "/sectors", label: "Sectors", icon: PieChart },
+  { to: "/alerts", label: "Alerts", icon: Bell },
+  { to: "/news", label: "News", icon: Newspaper },
 ];
 
 export function AppLayout() {
@@ -99,8 +117,29 @@ export function AppLayout() {
       </div>
 
       {/* ── Mobile / tablet: bottom nav ── */}
+      <MobileNav />
+
+      {/* Global "sign in to continue" modal — opened by gated actions / pages. */}
+      <LoginPrompt />
+    </div>
+  );
+}
+
+/* ─────────────── Mobile nav + More sheet ─────────────── */
+
+function MobileNav() {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const location = useLocation();
+
+  // Close the sheet whenever the route changes (after tapping a More item).
+  useEffect(() => { setMoreOpen(false); }, [location.pathname]);
+
+  const moreIsActive = MORE_NAV.some((item) => location.pathname.startsWith(item.to));
+
+  return (
+    <>
       <nav className="glass fixed inset-x-3 bottom-3 z-40 flex rounded-2xl p-1 lg:hidden">
-        {NAV.map(({ to, label, icon: Icon, end }) => (
+        {PRIMARY_NAV.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -108,9 +147,7 @@ export function AppLayout() {
             className={({ isActive }) =>
               cn(
                 "flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground",
+                isActive ? "bg-primary/10 text-primary" : "text-muted-foreground",
               )
             }
           >
@@ -118,13 +155,96 @@ export function AppLayout() {
             {label}
           </NavLink>
         ))}
+
+        {/* More button */}
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          className={cn(
+            "flex flex-1 flex-col items-center gap-1 rounded-xl py-2 text-[11px] font-medium transition-colors",
+            moreOpen || moreIsActive ? "bg-primary/10 text-primary" : "text-muted-foreground",
+          )}
+        >
+          <MoreHorizontal className="size-5" />
+          More
+        </button>
       </nav>
 
-      {/* Global "sign in to continue" modal — opened by gated actions / pages. */}
-      <LoginPrompt />
-    </div>
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} activePathname={location.pathname} />
+    </>
   );
 }
+
+function MoreSheet({
+  open,
+  onClose,
+  activePathname,
+}: {
+  open: boolean;
+  onClose: () => void;
+  activePathname: string;
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-200 lg:hidden",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        )}
+        onClick={onClose}
+      />
+
+      {/* Sheet */}
+      <div
+        className={cn(
+          "fixed inset-x-3 bottom-[5.5rem] z-50 rounded-2xl border bg-card p-4 shadow-2xl transition-all duration-300 ease-out lg:hidden",
+          open ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0 pointer-events-none",
+        )}
+      >
+        {/* Handle + close */}
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">More</p>
+          <button
+            onClick={onClose}
+            className="grid size-7 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {MORE_NAV.map(({ to, label, icon: Icon }) => {
+            const isActive = activePathname.startsWith(to);
+            return (
+              <button
+                key={to}
+                onClick={() => { navigate(to); onClose(); }}
+                className={cn(
+                  "flex flex-col items-center gap-2 rounded-xl px-2 py-3 text-[11px] font-medium transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                )}
+              >
+                <div className={cn(
+                  "grid size-10 place-items-center rounded-xl",
+                  isActive ? "bg-primary/15" : "bg-muted",
+                )}>
+                  <Icon className="size-5" />
+                </div>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─────────────── Auth controls ─────────────── */
 
 function AuthControls() {
   const { isAuthenticated, user, logout } = useAuth();
