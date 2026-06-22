@@ -5,9 +5,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChangeBadge } from "@/components/ChangeBadge";
 import { CompanyLogo } from "@/components/CompanyLogo";
-import { StockChart } from "@/components/StockChart";
+import { CandlestickChart } from "@/components/CandlestickChart";
 import { CenteredSpinner } from "@/components/ui/Spinner";
 import { useStock, useStockAnalytics, useStockHistory, useStocks } from "@/hooks/useStockData";
+import { useTheme } from "@/hooks/useTheme";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useFlash } from "@/hooks/useFlash";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ export function StockDetail() {
   const { data: analytics } = useStockAnalytics(symbol);
   const { data: stocks } = useStocks();
   const { ticks } = useWebSocket();
+  const { theme } = useTheme();
 
   if (isLoading || !stock) return <CenteredSpinner />;
 
@@ -100,7 +102,13 @@ export function StockDetail() {
             ))}
           </div>
           <div className="flex-1 px-2 pb-2 pt-3">
-            <StockChart points={points} period={period} height={440} />
+            <CandlestickChart
+                points={points}
+                period={period}
+                height={440}
+                theme={theme as "light" | "dark"}
+                symbol={stock.symbol}
+              />
           </div>
         </Card>
 
@@ -471,7 +479,7 @@ function SRTable({ levels, currentPrice }: { levels: SRLevel[]; currentPrice: nu
       )}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <p className="text-gain mb-1.5 text-xs font-medium uppercase tracking-wide">Resistance</p>
+          <p className="text-loss mb-1.5 text-xs font-medium uppercase tracking-wide">Resistance</p>
           <div className="space-y-1">
             {resistances.slice(0, 4).map((l) => (
               <SRRow key={l.price} level={l} />
@@ -480,7 +488,7 @@ function SRTable({ levels, currentPrice }: { levels: SRLevel[]; currentPrice: nu
           </div>
         </div>
         <div>
-          <p className="text-loss mb-1.5 text-xs font-medium uppercase tracking-wide">Support</p>
+          <p className="text-gain mb-1.5 text-xs font-medium uppercase tracking-wide">Support</p>
           <div className="space-y-1">
             {supports.slice(0, 4).map((l) => (
               <SRRow key={l.price} level={l} />
@@ -499,7 +507,7 @@ function SRRow({ level: l }: { level: SRLevel }) {
     <div className="flex items-center justify-between rounded-md px-2 py-1 hover:bg-accent/40 text-xs">
       <span className="num font-medium">{formatNaira(l.price)}</span>
       <div className="flex items-center gap-1.5">
-        <span className={cn("text-[10px]", isRes ? "text-gain" : "text-loss")}>
+        <span className={cn("text-[10px]", isRes ? "text-loss" : "text-gain")}>
           {l.distance_pct >= 0 ? "+" : ""}{l.distance_pct.toFixed(1)}%
         </span>
         <span className="text-muted-foreground text-[10px]">×{l.strength}</span>
