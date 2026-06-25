@@ -3,18 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { CompanyLogo } from "@/components/CompanyLogo";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { SectorsSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { formatCompact, formatNaira, formatNumber } from "@/lib/format";
 import { useSectors } from "@/hooks/useStockData";
 import { cn } from "@/lib/utils";
 import type { SectorDetail } from "@/types";
 
 export function Sectors() {
-  const { data: sectors, isLoading } = useSectors();
+  const { data: sectors, isLoading, isError, error, refetch, isFetching } =
+    useSectors();
   const [selected, setSelected] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <SectorsSkeleton />;
   if (!sectors?.length) return <p className="text-muted p-8 text-center text-sm">No sector data available.</p>;
 
   const totalCap = sectors.reduce((s, x) => s + x.total_market_cap, 0);

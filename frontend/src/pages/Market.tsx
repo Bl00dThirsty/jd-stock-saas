@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { Sparkline } from "@/components/Sparkline";
 import { ChangeBadge } from "@/components/ChangeBadge";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { MarketSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { useDefaultWatchlist, useStocks, useWatchlistToggle } from "@/hooks/useStockData";
 import { useAuthStore } from "@/store/authStore";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -66,7 +67,8 @@ function useServerWatchlist() {
 }
 
 export function Market() {
-  const { data: stocks, isLoading } = useStocks({ spark: true });
+  const { data: stocks, isLoading, isError, error, refetch, isFetching } =
+    useStocks({ spark: true });
   const { ticks } = useWebSocket();
   const isAuthed = useAuthStore((s) => Boolean(s.accessToken));
   const localWatch = useWatchlist();
@@ -115,7 +117,9 @@ export function Market() {
     }
   };
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <MarketSkeleton />;
 
   return (
     <div className="animate-rise space-y-3">

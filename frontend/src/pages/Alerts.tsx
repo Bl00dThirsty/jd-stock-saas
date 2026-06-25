@@ -10,7 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AlertForm } from "@/components/AlertForm";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { AlertsSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import {
   useAlerts,
   useCreateAlert,
@@ -21,13 +22,16 @@ import { cn } from "@/lib/utils";
 import { formatNaira } from "@/lib/format";
 
 export function Alerts() {
-  const { data: alerts, isLoading } = useAlerts();
+  const { data: alerts, isLoading, isError, error, refetch, isFetching } =
+    useAlerts();
   const createAlert = useCreateAlert();
   const toggleAlert = useToggleAlert();
   const deleteAlert = useDeleteAlert();
   const [showForm, setShowForm] = useState(false);
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <AlertsSkeleton />;
 
   return (
     <div className="animate-rise space-y-6">

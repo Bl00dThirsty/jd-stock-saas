@@ -11,7 +11,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PortfolioTable } from "@/components/PortfolioTable";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { PortfolioSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import {
   useAddHolding,
   useCreatePortfolio,
@@ -22,12 +23,15 @@ import { formatNaira, formatSignedNaira } from "@/lib/format";
 import type { Portfolio as TPortfolio } from "@/types";
 
 export function Portfolio() {
-  const { data: portfolios, isLoading } = usePortfolios();
+  const { data: portfolios, isLoading, isError, error, refetch, isFetching } =
+    usePortfolios();
   const createPortfolio = useCreatePortfolio();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <PortfolioSkeleton />;
 
   const handleCreate = (e: FormEvent) => {
     e.preventDefault();

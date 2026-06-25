@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { ChangeBadge } from "@/components/ChangeBadge";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { WatchlistsSkeleton, TableSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { formatNaira, formatCompact } from "@/lib/format";
 import {
   useWatchlist,
@@ -20,7 +21,8 @@ import {
 import type { WatchlistSummary } from "@/types";
 
 export function Watchlists() {
-  const { data: lists, isLoading } = useWatchlists();
+  const { data: lists, isLoading, isError, error, refetch, isFetching } =
+    useWatchlists();
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
@@ -28,7 +30,9 @@ export function Watchlists() {
 
   const activeId = selectedId ?? lists?.[0]?.id ?? null;
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <WatchlistsSkeleton />;
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -172,11 +176,23 @@ function WatchlistTab({
 }
 
 function WatchlistDetail({ id }: { id: number }) {
-  const { data: wl, isLoading } = useWatchlist(id);
+  const { data: wl, isLoading, isError, error, refetch, isFetching } =
+    useWatchlist(id);
   const toggle = useWatchlistToggle();
   const navigate = useNavigate();
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return (
+      <Card className="shadow-none">
+        <ErrorState
+          error={error}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+          compact
+        />
+      </Card>
+    );
+  if (isLoading) return <TableSkeleton rows={6} cols={4} />;
   if (!wl) return null;
 
   return (

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { ChangeBadge } from "@/components/ChangeBadge";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { TableSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { formatNaira, formatCompact, formatNumber } from "@/lib/format";
 import { useScreener, useStocks, type ScreenerParams } from "@/hooks/useStockData";
 import { cn } from "@/lib/utils";
@@ -28,7 +29,8 @@ export function Screener() {
 
   const [filters, setFilters] = useState<ScreenerParams>(DEFAULT_PARAMS);
   const [showFilters, setShowFilters] = useState(true);
-  const { data, isLoading } = useScreener(filters);
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useScreener(filters);
   const navigate = useNavigate();
 
   const set = (patch: Partial<ScreenerParams>) => setFilters((f) => ({ ...f, ...patch, offset: 0 }));
@@ -204,8 +206,10 @@ export function Screener() {
         </Card>
       )}
 
-      {isLoading ? (
-        <CenteredSpinner />
+      {isError ? (
+        <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />
+      ) : isLoading ? (
+        <TableSkeleton rows={8} cols={6} />
       ) : (
         <Card className="overflow-hidden p-0 shadow-none">
           <div className="overflow-x-auto">

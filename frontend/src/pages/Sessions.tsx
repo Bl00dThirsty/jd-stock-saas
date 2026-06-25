@@ -3,21 +3,25 @@ import { Globe, Monitor, Smartphone, Trash2 } from "lucide-react";
 import { api } from "@/services/api";
 import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { ListSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { useAuth } from "@/hooks/useAuth";
 import { formatDate } from "@/lib/format";
 import type { UserSession } from "@/types";
 
 export function Sessions() {
-  const { data: sessions, isLoading } = useQuery({
-    queryKey: ["sessions"],
-    queryFn: async () => {
-      const { data } = await api.get<UserSession[]>("/users/me/sessions");
-      return data;
-    },
-  });
+  const { data: sessions, isLoading, isError, error, refetch, isFetching } =
+    useQuery({
+      queryKey: ["sessions"],
+      queryFn: async () => {
+        const { data } = await api.get<UserSession[]>("/users/me/sessions");
+        return data;
+      },
+    });
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <ListSkeleton rows={4} />;
 
   return (
     <div className="animate-rise space-y-6">
