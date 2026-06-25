@@ -26,9 +26,7 @@ def check_alerts() -> dict:
             price = alert.stock.last_price
             if price is None:
                 continue
-            crossed = (
-                alert.direction == AlertDirection.above and price >= alert.target_price
-            ) or (
+            crossed = (alert.direction == AlertDirection.above and price >= alert.target_price) or (
                 alert.direction == AlertDirection.below and price <= alert.target_price
             )
             if crossed:

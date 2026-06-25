@@ -49,14 +49,10 @@ jobs:
           cache: pip
       - name: Install dependencies
         run: pip install -e ".[dev]"
-      # Lint is advisory for now — the codebase carries pre-existing ruff debt.
-      # Flip these to blocking once that's cleaned up (see follow-up).
-      - name: Ruff lint (advisory)
+      - name: Ruff lint
         run: ruff check app tests
-        continue-on-error: true
-      - name: Ruff format check (advisory)
+      - name: Ruff format check
         run: ruff format --check app tests
-        continue-on-error: true
       - name: Pytest
         run: pytest -q
 

@@ -6,7 +6,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func as sqlfunc, select
+from sqlalchemy import func as sqlfunc
+from sqlalchemy import select
 
 from app.core.deps import DbSession
 from app.models.stock import Stock
@@ -81,12 +82,26 @@ async def screen(
     change_pct_min: float | None = None,
     change_pct_max: float | None = None,
     week52_pct_from_high: float | None = None,
-    sort_by: str = Query("market_cap", pattern="^(symbol|last_price|change_percent|volume|market_cap|pe_ratio|dividend_yield)$"),
+    sort_by: str = Query(
+        "market_cap",
+        pattern="^(symbol|last_price|change_percent|volume|market_cap|pe_ratio|dividend_yield)$",
+    ),
     sort_dir: str = Query("desc", pattern="^(asc|desc)$"),
     limit: int = Query(100, le=500),
     offset: int = Query(0, ge=0),
 ) -> ScreenerResult:
-    base_q = _build_query(sector, pe_min, pe_max, cap_min, cap_max, vol_min, div_yield_min, change_pct_min, change_pct_max, week52_pct_from_high)
+    base_q = _build_query(
+        sector,
+        pe_min,
+        pe_max,
+        cap_min,
+        cap_max,
+        vol_min,
+        div_yield_min,
+        change_pct_min,
+        change_pct_max,
+        week52_pct_from_high,
+    )
 
     total = await db.scalar(select(sqlfunc.count()).select_from(base_q.subquery())) or 0
 
@@ -113,22 +128,55 @@ async def export_csv(
     sort_by: str = Query("market_cap"),
     sort_dir: str = Query("desc"),
 ) -> StreamingResponse:
-    base_q = _build_query(sector, pe_min, pe_max, cap_min, cap_max, vol_min, div_yield_min, change_pct_min, change_pct_max, week52_pct_from_high)
+    base_q = _build_query(
+        sector,
+        pe_min,
+        pe_max,
+        cap_min,
+        cap_max,
+        vol_min,
+        div_yield_min,
+        change_pct_min,
+        change_pct_max,
+        week52_pct_from_high,
+    )
     col = _SORT_COLS.get(sort_by, Stock.market_cap)
     order = col.asc() if sort_dir == "asc" else col.desc().nulls_last()
     stocks = list((await db.scalars(base_q.order_by(order).limit(2000))).all())
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Symbol", "Name", "Sector", "Price (NGN)", "Change %", "Volume", "Market Cap", "P/E", "Div Yield %", "52W High", "52W Low"])
+    writer.writerow(
+        [
+            "Symbol",
+            "Name",
+            "Sector",
+            "Price (NGN)",
+            "Change %",
+            "Volume",
+            "Market Cap",
+            "P/E",
+            "Div Yield %",
+            "52W High",
+            "52W Low",
+        ]
+    )
     for s in stocks:
-        writer.writerow([
-            s.symbol, s.name, s.sector or "",
-            s.last_price or "", s.change_percent or "",
-            s.volume or "", s.market_cap or "",
-            s.pe_ratio or "", s.dividend_yield or "",
-            s.week52_high or "", s.week52_low or "",
-        ])
+        writer.writerow(
+            [
+                s.symbol,
+                s.name,
+                s.sector or "",
+                s.last_price or "",
+                s.change_percent or "",
+                s.volume or "",
+                s.market_cap or "",
+                s.pe_ratio or "",
+                s.dividend_yield or "",
+                s.week52_high or "",
+                s.week52_low or "",
+            ]
+        )
 
     output.seek(0)
     return StreamingResponse(
@@ -160,13 +208,24 @@ async def export_xlsx(
         from openpyxl.utils import get_column_letter
     except ImportError:
         from fastapi import HTTPException, status
+
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="openpyxl not installed — XLSX export unavailable",
-        )
+        ) from None
 
-    base_q = _build_query(sector, pe_min, pe_max, cap_min, cap_max, vol_min,
-                          div_yield_min, change_pct_min, change_pct_max, week52_pct_from_high)
+    base_q = _build_query(
+        sector,
+        pe_min,
+        pe_max,
+        cap_min,
+        cap_max,
+        vol_min,
+        div_yield_min,
+        change_pct_min,
+        change_pct_max,
+        week52_pct_from_high,
+    )
     col = _SORT_COLS.get(sort_by, Stock.market_cap)
     order = col.asc() if sort_dir == "asc" else col.desc().nulls_last()
     stocks = list((await db.scalars(base_q.order_by(order).limit(5000))).all())
@@ -178,15 +237,11 @@ async def export_xlsx(
     # ── Palette ──
     TEAL = "1A6B5A"
     LIGHT_TEAL = "E6F3EF"
-    MID_GRAY = "F5F5F5"
-    DARK_TEXT = "1A1A1A"
     GAIN_COLOR = "15803D"
     LOSS_COLOR = "B91C1C"
-    NEUTRAL = "6B7280"
 
     header_fill = PatternFill("solid", fgColor=TEAL)
     alt_fill = PatternFill("solid", fgColor=LIGHT_TEAL)
-    gray_fill = PatternFill("solid", fgColor=MID_GRAY)
     thin_border = Border(
         bottom=Side(style="thin", color="D1D5DB"),
     )
@@ -203,18 +258,28 @@ async def export_xlsx(
     # ── Subtitle / filter summary ──
     ws.merge_cells("A2:K2")
     filters_used = []
-    if sector:             filters_used.append(f"Sector: {sector}")
-    if pe_min is not None: filters_used.append(f"P/E ≥ {pe_min}")
-    if pe_max is not None: filters_used.append(f"P/E ≤ {pe_max}")
-    if cap_min is not None: filters_used.append(f"Cap ≥ ₦{cap_min/1e9:.1f}B")
-    if cap_max is not None: filters_used.append(f"Cap ≤ ₦{cap_max/1e9:.1f}B")
-    if vol_min is not None: filters_used.append(f"Vol ≥ {vol_min:,.0f}")
-    if div_yield_min is not None: filters_used.append(f"Div yield ≥ {div_yield_min}%")
-    if change_pct_min is not None: filters_used.append(f"Chg ≥ {change_pct_min}%")
-    if change_pct_max is not None: filters_used.append(f"Chg ≤ {change_pct_max}%")
+    if sector:
+        filters_used.append(f"Sector: {sector}")
+    if pe_min is not None:
+        filters_used.append(f"P/E ≥ {pe_min}")
+    if pe_max is not None:
+        filters_used.append(f"P/E ≤ {pe_max}")
+    if cap_min is not None:
+        filters_used.append(f"Cap ≥ ₦{cap_min / 1e9:.1f}B")
+    if cap_max is not None:
+        filters_used.append(f"Cap ≤ ₦{cap_max / 1e9:.1f}B")
+    if vol_min is not None:
+        filters_used.append(f"Vol ≥ {vol_min:,.0f}")
+    if div_yield_min is not None:
+        filters_used.append(f"Div yield ≥ {div_yield_min}%")
+    if change_pct_min is not None:
+        filters_used.append(f"Chg ≥ {change_pct_min}%")
+    if change_pct_max is not None:
+        filters_used.append(f"Chg ≤ {change_pct_max}%")
     sub_cell = ws["A2"]
     filter_text = "  ·  ".join(filters_used) if filters_used else "No filters applied"
-    sub_cell.value = f"{len(stocks)} results  |  {filter_text}  |  Exported {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    exported = datetime.now().strftime("%Y-%m-%d %H:%M")
+    sub_cell.value = f"{len(stocks)} results  |  {filter_text}  |  Exported {exported}"
     sub_cell.font = Font(size=10, color="FFFFFF", italic=True)
     sub_cell.fill = PatternFill("solid", fgColor="2D8B70")
     sub_cell.alignment = Alignment(horizontal="left", vertical="center", indent=1)
@@ -224,17 +289,17 @@ async def export_xlsx(
 
     # ── Headers (row 4) ──
     COLS = [
-        ("Symbol",      10, "symbol"),
-        ("Name",        28, "name"),
-        ("Sector",      16, "sector"),
-        ("Price (₦)",   12, "last_price"),
-        ("Change %",    10, "change_percent"),
-        ("Volume",      13, "volume"),
+        ("Symbol", 10, "symbol"),
+        ("Name", 28, "name"),
+        ("Sector", 16, "sector"),
+        ("Price (₦)", 12, "last_price"),
+        ("Change %", 10, "change_percent"),
+        ("Volume", 13, "volume"),
         ("Mkt Cap (₦)", 16, "market_cap"),
-        ("P/E",          8, "pe_ratio"),
-        ("Div Yield %",  11, "dividend_yield"),
-        ("52W High",    12, "week52_high"),
-        ("52W Low",     12, "week52_low"),
+        ("P/E", 8, "pe_ratio"),
+        ("Div Yield %", 11, "dividend_yield"),
+        ("52W High", 12, "week52_high"),
+        ("52W Low", 12, "week52_low"),
     ]
     for col_idx, (label, width, _) in enumerate(COLS, start=1):
         cell = ws.cell(row=4, column=col_idx, value=label)
@@ -246,7 +311,7 @@ async def export_xlsx(
 
     # ── Data rows ──
     for row_idx, s in enumerate(stocks, start=5):
-        is_alt = (row_idx % 2 == 0)
+        is_alt = row_idx % 2 == 0
         row_fill = alt_fill if is_alt else None
         chg = s.change_percent or 0.0
 
@@ -271,10 +336,10 @@ async def export_xlsx(
 
             # Number formatting
             if col_idx == 4:  # price
-                cell.number_format = '#,##0.00'
+                cell.number_format = "#,##0.00"
                 cell.alignment = Alignment(horizontal="right")
             elif col_idx == 5:  # change %
-                cell.number_format = '+0.00%;-0.00%'
+                cell.number_format = "+0.00%;-0.00%"
                 cell.alignment = Alignment(horizontal="right")
                 if val is not None:
                     cell.value = (val or 0) / 100
@@ -283,10 +348,10 @@ async def export_xlsx(
                         bold=True,
                     )
             elif col_idx in (6, 7):  # volume, market cap
-                cell.number_format = '#,##0'
+                cell.number_format = "#,##0"
                 cell.alignment = Alignment(horizontal="right")
             elif col_idx in (8, 9, 10, 11):  # pe, div, 52w
-                cell.number_format = '0.00'
+                cell.number_format = "0.00"
                 cell.alignment = Alignment(horizontal="right")
             elif col_idx == 1:  # symbol
                 cell.font = Font(bold=True)

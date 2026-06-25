@@ -14,9 +14,7 @@ if TYPE_CHECKING:
 
 class PriceHistory(Base):
     __tablename__ = "price_history"
-    __table_args__ = (
-        Index("ix_price_stock_ts", "stock_id", "timestamp"),
-    )
+    __table_args__ = (Index("ix_price_stock_ts", "stock_id", "timestamp"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     stock_id: Mapped[int] = mapped_column(
@@ -29,8 +27,6 @@ class PriceHistory(Base):
     volume: Mapped[float | None] = mapped_column(Float)
     change: Mapped[float | None] = mapped_column(Float)
     change_percent: Mapped[float | None] = mapped_column(Float)
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), index=True, nullable=False
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True, nullable=False)
 
     stock: Mapped["Stock"] = relationship(back_populates="prices")

@@ -23,9 +23,7 @@ class StockAttributeDef(Base, TimestampMixin, RowstampMixin):
     __tablename__ = "stock_attribute_defs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    assetattrid: Mapped[str] = mapped_column(
-        String(64), unique=True, index=True, nullable=False
-    )
+    assetattrid: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
     description: Mapped[str | None] = mapped_column(String(255))
     # ALN / NUMERIC / DATE / BOOLEAN / ASSET / MEMO
     attribute_type: Mapped[str] = mapped_column(

@@ -59,7 +59,15 @@ async def record_changes(
         if old == new:
             continue
         await record_change(
-            db, object_type, object_id, field, old, new,
-            changeby=changeby, transaction_id=txn, reason=reason, source=source,
+            db,
+            object_type,
+            object_id,
+            field,
+            old,
+            new,
+            changeby=changeby,
+            transaction_id=txn,
+            reason=reason,
+            source=source,
         )
     return txn

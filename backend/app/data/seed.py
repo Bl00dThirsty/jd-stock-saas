@@ -15,9 +15,7 @@ from app.models.stock import Stock
 
 async def seed_stocks() -> None:
     async with AsyncSessionLocal() as db:
-        existing = set(
-            (await db.scalars(select(Stock.symbol))).all()
-        )
+        existing = set((await db.scalars(select(Stock.symbol))).all())
         created = 0
         for t in NGX_TICKERS:
             if t["symbol"] in existing:

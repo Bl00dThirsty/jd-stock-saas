@@ -2,7 +2,18 @@
 
 from fastapi import APIRouter
 
-from app.api.v1 import admin, alerts, auth, news, portfolio, screener, sectors, stocks, watchlists, ws
+from app.api.v1 import (
+    admin,
+    alerts,
+    auth,
+    news,
+    portfolio,
+    screener,
+    sectors,
+    stocks,
+    watchlists,
+    ws,
+)
 
 api_router = APIRouter()
 

@@ -31,7 +31,7 @@ class VolumeAnomalyOut(BaseModel):
 class SRLevelOut(BaseModel):
     price: float
     strength: int
-    level_type: str   # "support" | "resistance"
+    level_type: str  # "support" | "resistance"
     distance_pct: float
 
 
@@ -43,6 +43,7 @@ class StockAnalyticsOut(BaseModel):
 
 
 # ── Sector detail ─────────────────────────────────────────────────────────────
+
 
 class SectorStockRow(BaseModel):
     symbol: str
@@ -65,6 +66,6 @@ class SectorDetailOut(BaseModel):
     total_volume: float
     avg_pe_ratio: float | None
     avg_dividend_yield: float | None
-    top_by_cap: list[SectorStockRow]    # top 5 by market cap
-    top_gainers: list[SectorStockRow]   # top 3 gainers today
-    top_losers: list[SectorStockRow]    # top 3 losers today
+    top_by_cap: list[SectorStockRow]  # top 5 by market cap
+    top_gainers: list[SectorStockRow]  # top 3 gainers today
+    top_losers: list[SectorStockRow]  # top 3 losers today
