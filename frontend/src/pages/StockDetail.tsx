@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { ChangeBadge } from "@/components/ChangeBadge";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { CandlestickChart } from "@/components/CandlestickChart";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { StockDetailSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { useStock, useStockAnalytics, useStockHistory, useStocks } from "@/hooks/useStockData";
 import { useTheme } from "@/hooks/useTheme";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -39,14 +40,17 @@ export function StockDetail() {
   const { symbol = "" } = useParams();
   const [period, setPeriod] = useState("1m");
   const [bottomTab, setBottomTab] = useState<"fundamentals" | "analytics">("fundamentals");
-  const { data: stock, isLoading } = useStock(symbol);
+  const { data: stock, isLoading, isError, error, refetch, isFetching } =
+    useStock(symbol);
   const { data: history } = useStockHistory(symbol, period);
   const { data: analytics } = useStockAnalytics(symbol);
   const { data: stocks } = useStocks();
   const { ticks } = useWebSocket();
   const { theme } = useTheme();
 
-  if (isLoading || !stock) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading || !stock) return <StockDetailSkeleton />;
 
   const tick = ticks[symbol];
   const livePrice = tick?.price ?? stock.last_price;

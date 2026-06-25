@@ -3,13 +3,14 @@ import { ExternalLink, Newspaper } from "lucide-react";
 import { Card, CardBody } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { NewsCardsSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { useNews } from "@/hooks/useStockData";
 import { formatDate } from "@/lib/format";
 
 export function News() {
   const [filter, setFilter] = useState("");
-  const { data: news, isLoading } = useNews(
+  const { data: news, isLoading, isError, error, refetch, isFetching } = useNews(
     filter.trim() ? { stock: filter.trim().toUpperCase() } : {},
   );
 
@@ -31,8 +32,10 @@ export function News() {
         </div>
       </header>
 
-      {isLoading ? (
-        <CenteredSpinner />
+      {isError ? (
+        <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />
+      ) : isLoading ? (
+        <NewsCardsSkeleton />
       ) : (news ?? []).length === 0 ? (
         <Card>
           <CardBody className="flex flex-col items-center gap-3 py-16 text-center">

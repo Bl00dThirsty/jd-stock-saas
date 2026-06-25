@@ -12,7 +12,8 @@ import { api } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { SettingsSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +28,8 @@ export function Privacy() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
-  const { data: consent, isLoading } = useQuery({
+  const { data: consent, isLoading, isError, error, refetch, isFetching } =
+    useQuery({
     queryKey: ["consent"],
     queryFn: async () => {
       const { data } = await api.get<ConsentStatus>("/users/me/consent");
@@ -84,7 +86,9 @@ export function Privacy() {
     URL.revokeObjectURL(url);
   };
 
-  if (isLoading) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading) return <SettingsSkeleton />;
 
   return (
     <div className="animate-rise space-y-8">

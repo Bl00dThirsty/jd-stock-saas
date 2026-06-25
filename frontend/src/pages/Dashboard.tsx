@@ -15,7 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { ChangeBadge } from "@/components/ChangeBadge";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { Sparkline } from "@/components/Sparkline";
-import { CenteredSpinner } from "@/components/ui/Spinner";
+import { DashboardSkeleton } from "@/components/Skeletons";
+import { ErrorState } from "@/components/ErrorState";
 import { useMarketSummary, useAlerts } from "@/hooks/useStockData";
 import { cn } from "@/lib/utils";
 import { formatCompact, formatNaira, formatPercent } from "@/lib/format";
@@ -24,10 +25,13 @@ import type { Alert, MarketMover, MarketSummary, SectorPerf } from "@/types";
 const naira = (v: number | null | undefined) => `₦${formatCompact(v)}`;
 
 export function Dashboard() {
-  const { data: summary, isLoading } = useMarketSummary();
+  const { data: summary, isLoading, isError, error, refetch, isFetching } =
+    useMarketSummary();
   const { data: alerts } = useAlerts();
 
-  if (isLoading || !summary) return <CenteredSpinner />;
+  if (isError)
+    return <ErrorState error={error} onRetry={() => refetch()} retrying={isFetching} />;
+  if (isLoading || !summary) return <DashboardSkeleton />;
 
   const triggered = (alerts ?? []).filter((a) => a.is_triggered);
 
