@@ -1,9 +1,9 @@
 """Application settings, loaded from environment / .env via pydantic-settings."""
 
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # ─── App ───
     PROJECT_NAME: str = "NGX Stock SaaS"
     API_V1_PREFIX: str = "/api/v1"
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: Literal["development", "staging", "production"] = "development"
     FRONTEND_URL: str = "http://localhost:5173"
     BACKEND_CORS_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
 
@@ -56,6 +56,15 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
+
+    @model_validator(mode="after")
+    def _guard_production_secrets(self) -> "Settings":
+        """Refuse to boot outside development with placeholder secrets."""
+        if self.ENVIRONMENT != "development" and self.JWT_SECRET_KEY == "change-me":
+            raise ValueError(
+                "JWT_SECRET_KEY must be overridden when ENVIRONMENT is not 'development'"
+            )
+        return self
 
     @property
     def sync_database_url(self) -> str:
