@@ -52,14 +52,13 @@ export function Sectors() {
         ))}
       </div>
 
-      <div className={cn("grid gap-4", selectedSector ? "lg:grid-cols-[1fr_380px]" : "")}>
-        {/* Treemap grid */}
-        <div className="flex flex-wrap gap-3 content-start">
+      <div className={cn("grid gap-4", selectedSector ? "lg:grid-cols-[1fr_360px]" : "")}>
+        {/* Trading-board grid — solid green/red tiles, sharp angles, theme-aware gutters */}
+        <div className="grid grid-cols-2 gap-[3px] self-start bg-border p-[3px] sm:grid-cols-3 xl:grid-cols-4">
           {sectors.map((s) => (
             <SectorTile
               key={s.sector}
               sector={s}
-              totalCap={totalCap}
               active={selected === s.sector}
               onClick={() => setSelected(selected === s.sector ? null : s.sector)}
             />
@@ -81,64 +80,57 @@ export function Sectors() {
 
 function SectorTile({
   sector: s,
-  totalCap,
   active,
   onClick,
 }: {
   sector: SectorDetail;
-  totalCap: number;
   active: boolean;
   onClick: () => void;
 }) {
   const pct = s.avg_change_percent;
   const up = pct >= 0;
 
-  // Tile width proportional to market cap (min 120px, max 280px in a flex-wrap)
-  const capShare = totalCap > 0 ? s.total_market_cap / totalCap : 0;
-  const minW = 130;
-  const maxW = 280;
-  const tileW = Math.round(minW + (maxW - minW) * Math.min(capShare * 5, 1));
-
-  // Background intensity based on change %
-  const intensity = Math.min(Math.abs(pct) / 3, 1); // saturate at ±3%
-  const bgStyle: React.CSSProperties = {
-    width: tileW,
-    backgroundColor: up
-      ? `rgba(21, 128, 61, ${0.08 + intensity * 0.20})`
-      : `rgba(185, 28, 28, ${0.08 + intensity * 0.20})`,
-    borderColor: up
-      ? `rgba(21, 128, 61, ${0.2 + intensity * 0.3})`
-      : `rgba(185, 28, 28, ${0.2 + intensity * 0.3})`,
-  };
-
   return (
     <button
       onClick={onClick}
-      style={bgStyle}
+      style={{ backgroundColor: up ? "#0f9d4f" : "#d12b22" }}
       className={cn(
-        "flex flex-col justify-between rounded-xl border p-3 text-left transition-all hover:scale-[1.02]",
-        "min-h-[100px]",
-        active && "ring-2 ring-offset-1",
-        active && up ? "ring-gain" : active ? "ring-loss" : "",
+        "relative flex min-h-[132px] flex-col justify-between overflow-hidden p-3 text-left text-white transition-[filter] hover:brightness-110",
+        active && "z-10 ring-2 ring-inset ring-white",
       )}
     >
-      <div>
-        <p className="text-foreground text-xs font-semibold leading-tight">{s.sector}</p>
-        <p className="text-muted-foreground mt-0.5 text-[10px]">{s.stock_count} stocks</p>
+      {/* glossy board sheen */}
+      <span className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-black/15" />
+
+      {/* sector + listings */}
+      <div className="relative">
+        <p className="text-sm font-semibold uppercase leading-tight tracking-wide">{s.sector}</p>
+        <p className="text-[11px] text-white/70">{s.stock_count} listings</p>
       </div>
-      <div className="mt-3">
-        <p className={cn("num text-lg font-bold leading-none", up ? "text-gain" : "text-loss")}>
-          {up ? "+" : ""}{pct.toFixed(2)}%
-        </p>
-        <div className="mt-1.5 flex items-center gap-1.5">
-          <span className="text-[10px] text-gain">▲ {s.advancers}</span>
-          <span className="text-[10px] text-loss">▼ {s.decliners}</span>
-        </div>
-        <p className="text-muted-foreground mt-1 text-[9px]">
-          ₦{formatCompact(s.total_market_cap)}
-        </p>
+
+      {/* headline: average change % + direction triangle */}
+      <p className="num relative flex items-center gap-1.5 text-3xl font-bold leading-none">
+        {up ? "+" : ""}
+        {pct.toFixed(2)}%
+        <span className="text-xl leading-none">{up ? "▲" : "▼"}</span>
+      </p>
+
+      {/* board-style sub-stats */}
+      <div className="relative grid grid-cols-3 gap-2">
+        <BoardStat label="Adv" value={String(s.advancers)} />
+        <BoardStat label="Dec" value={String(s.decliners)} />
+        <BoardStat label="Mkt Cap" value={`₦${formatCompact(s.total_market_cap)}`} />
       </div>
     </button>
+  );
+}
+
+function BoardStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="leading-tight">
+      <p className="text-[9px] uppercase tracking-wide text-white/55">{label}</p>
+      <p className="num text-[11px] font-semibold text-white">{value}</p>
+    </div>
   );
 }
 
