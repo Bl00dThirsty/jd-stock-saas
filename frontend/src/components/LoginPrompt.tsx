@@ -1,4 +1,4 @@
-import { ArrowUpRight } from "lucide-react";
+import { Apple, ArrowUpRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import { useLoginPrompt } from "@/store/loginPromptStore";
  */
 export function LoginPrompt() {
   const { open, reason, close } = useLoginPrompt();
-  const { login, devLogin } = useAuth();
+  const { login, loginWithApple, devLogin } = useAuth();
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
@@ -32,6 +32,11 @@ export function LoginPrompt() {
         <Button onClick={login} size="lg" variant="outline" className="w-full">
           <GoogleGlyph />
           Continue with Google
+        </Button>
+
+        <Button onClick={loginWithApple} size="lg" variant="outline" className="w-full">
+          <Apple className="size-4" />
+          Continue with Apple
         </Button>
 
         {import.meta.env.DEV && (
