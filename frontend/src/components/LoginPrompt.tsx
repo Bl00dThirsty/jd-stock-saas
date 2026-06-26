@@ -1,4 +1,4 @@
-import { Apple, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GoogleGlyph } from "@/components/GoogleGlyph";
+import appleLogo from "@/assets/icons/apple-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useLoginPrompt } from "@/store/loginPromptStore";
 
@@ -35,7 +36,7 @@ export function LoginPrompt() {
         </Button>
 
         <Button onClick={loginWithApple} size="lg" variant="outline" className="w-full">
-          <Apple className="size-4" />
+          <img src={appleLogo} alt="" className="size-4 dark:invert" />
           Continue with Apple
         </Button>
 
