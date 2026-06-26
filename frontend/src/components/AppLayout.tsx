@@ -222,18 +222,13 @@ function MoreSheet({
                 key={to}
                 onClick={() => { navigate(to); onClose(); }}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-xl px-2 py-3 text-[11px] font-medium transition-colors",
+                  "flex flex-col items-center gap-1 rounded-xl py-3 text-[11px] font-medium transition-colors",
                   isActive
                     ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <div className={cn(
-                  "grid size-10 place-items-center rounded-xl",
-                  isActive ? "bg-primary/15" : "bg-muted",
-                )}>
-                  <Icon className="size-5" />
-                </div>
+                <Icon className="size-5" />
                 {label}
               </button>
             );
