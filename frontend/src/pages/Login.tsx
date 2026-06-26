@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Apple, ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import appleLogo from "@/assets/icons/apple-logo.png";
 
 type Mode = "login" | "register";
 
@@ -208,7 +209,7 @@ export function Login() {
             {/* Social */}
             <div className="grid grid-cols-2 gap-3">
               <Button variant="outline" className="h-10" onClick={loginWithApple}>
-                <Apple className="size-4" />
+                <img src={appleLogo} alt="" className="size-4 dark:invert" />
                 Apple
               </Button>
               <Button variant="outline" className="h-10" onClick={login}>

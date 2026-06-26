@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { GoogleGlyph } from "@/components/GoogleGlyph";
+import appleLogo from "@/assets/icons/apple-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useLoginPrompt } from "@/store/loginPromptStore";
 
@@ -17,7 +18,7 @@ import { useLoginPrompt } from "@/store/loginPromptStore";
  */
 export function LoginPrompt() {
   const { open, reason, close } = useLoginPrompt();
-  const { login, devLogin } = useAuth();
+  const { login, loginWithApple, devLogin } = useAuth();
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && close()}>
@@ -32,6 +33,11 @@ export function LoginPrompt() {
         <Button onClick={login} size="lg" variant="outline" className="w-full">
           <GoogleGlyph />
           Continue with Google
+        </Button>
+
+        <Button onClick={loginWithApple} size="lg" variant="outline" className="w-full">
+          <img src={appleLogo} alt="" className="size-4 dark:invert" />
+          Continue with Apple
         </Button>
 
         {import.meta.env.DEV && (
