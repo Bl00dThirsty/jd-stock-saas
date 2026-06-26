@@ -230,7 +230,7 @@ function MoreSheet({
               >
                 <div className={cn(
                   "grid size-10 place-items-center rounded-xl",
-                  isActive ? "bg-primary/15" : "bg-muted",
+                  isActive ? "bg-primary/15 text-primary" : "bg-muted text-foreground",
                 )}>
                   <Icon className="size-5" />
                 </div>
