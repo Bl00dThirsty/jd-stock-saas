@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import ACCESS, decode_token
-from app.models.session import UserSession
 from app.models.user import User, UserRole
 
 bearer_scheme = HTTPBearer(auto_error=False)

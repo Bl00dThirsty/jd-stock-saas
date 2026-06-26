@@ -11,20 +11,21 @@ Nigeria-specific defaults:
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
-RF_ANNUAL = 0.17          # Nigeria risk-free rate (CBN benchmark 2024)
-TRADING_DAYS = 252        # standard annual trading-day count
-MIN_POINTS = 20           # minimum data points for "data_sufficient = True"
-SR_WINDOW = 5             # local-extrema look-back window (sessions)
-SR_CLUSTER_PCT = 0.015    # levels within 1.5% of each other → same cluster
-ANOMALY_ZSCORE = 2.5      # z-score threshold for volume anomaly
+RF_ANNUAL = 0.17  # Nigeria risk-free rate (CBN benchmark 2024)
+TRADING_DAYS = 252  # standard annual trading-day count
+MIN_POINTS = 20  # minimum data points for "data_sufficient = True"
+SR_WINDOW = 5  # local-extrema look-back window (sessions)
+SR_CLUSTER_PCT = 0.015  # levels within 1.5% of each other → same cluster
+ANOMALY_ZSCORE = 2.5  # z-score threshold for volume anomaly
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
@@ -46,6 +47,7 @@ def _daily_returns(prices: list[float]) -> list[float]:
 
 
 # ── Return metrics ────────────────────────────────────────────────────────────
+
 
 @dataclass
 class ReturnMetrics:
@@ -75,10 +77,17 @@ def compute_return_metrics(
     insufficient rather than raising.
     """
     _empty = ReturnMetrics(
-        period=period, total_return_pct=0.0, cagr_pct=0.0,
-        annualized_vol_pct=0.0, sharpe_ratio=0.0,
-        max_drawdown_pct=0.0, max_drawdown_start=None, max_drawdown_end=None,
-        best_day_pct=0.0, worst_day_pct=0.0, trading_days=len(prices),
+        period=period,
+        total_return_pct=0.0,
+        cagr_pct=0.0,
+        annualized_vol_pct=0.0,
+        sharpe_ratio=0.0,
+        max_drawdown_pct=0.0,
+        max_drawdown_start=None,
+        max_drawdown_end=None,
+        best_day_pct=0.0,
+        worst_day_pct=0.0,
+        trading_days=len(prices),
         data_sufficient=False,
     )
     if len(prices) < 2 or len(prices) != len(timestamps):
@@ -102,7 +111,7 @@ def compute_return_metrics(
     # Maximum drawdown (peak-to-trough)
     peak, peak_ts = prices[0], timestamps[0]
     max_dd, dd_start, dd_end = 0.0, timestamps[0], timestamps[0]
-    for price, ts in zip(prices, timestamps):
+    for price, ts in zip(prices, timestamps, strict=False):
         if price > peak:
             peak, peak_ts = price, ts
         dd = (price - peak) / peak * 100
@@ -130,6 +139,7 @@ def compute_return_metrics(
 
 # ── Volume anomaly ────────────────────────────────────────────────────────────
 
+
 @dataclass
 class VolumeAnomaly:
     z_score: float
@@ -148,8 +158,11 @@ def compute_volume_anomaly(
     vols = [v for v in recent_volumes[-window:] if v and v > 0]
     if len(vols) < 5 or not current_volume:
         return VolumeAnomaly(
-            z_score=0.0, avg_volume_20d=current_volume,
-            current_volume=current_volume, is_anomaly=False, direction="normal",
+            z_score=0.0,
+            avg_volume_20d=current_volume,
+            current_volume=current_volume,
+            is_anomaly=False,
+            direction="normal",
         )
     avg = _mean(vols)
     std = _std(vols)
@@ -166,12 +179,13 @@ def compute_volume_anomaly(
 
 # ── Support & resistance ──────────────────────────────────────────────────────
 
+
 @dataclass
 class SRLevel:
     price: float
-    strength: int         # number of distinct touches clustered here
-    level_type: str       # "support" | "resistance"
-    distance_pct: float   # % away from current price (positive = above)
+    strength: int  # number of distinct touches clustered here
+    level_type: str  # "support" | "resistance"
+    distance_pct: float  # % away from current price (positive = above)
 
 
 def compute_support_resistance(
@@ -197,8 +211,8 @@ def compute_support_resistance(
 
     for i in range(window, len(prices) - window):
         p = prices[i]
-        neighbors_before = prices[i - window: i]
-        neighbors_after = prices[i + 1: i + window + 1]
+        neighbors_before = prices[i - window : i]
+        neighbors_after = prices[i + 1 : i + window + 1]
         if all(p <= nb for nb in neighbors_before) and all(p <= na for na in neighbors_after):
             local_min.append(p)
         elif all(p >= nb for nb in neighbors_before) and all(p >= na for na in neighbors_after):
@@ -230,13 +244,15 @@ def compute_support_resistance(
             level_type = "support"
         else:
             level_type = "resistance"
-        levels.append(SRLevel(
-            price=round(center, 2),
-            strength=strength,
-            level_type=level_type,
-            distance_pct=round(distance_pct, 2),
-        ))
+        levels.append(
+            SRLevel(
+                price=round(center, 2),
+                strength=strength,
+                level_type=level_type,
+                distance_pct=round(distance_pct, 2),
+            )
+        )
 
     # Sort: strongest first, then by proximity to current price
-    levels.sort(key=lambda l: (-l.strength, abs(l.distance_pct)))
+    levels.sort(key=lambda lvl: (-lvl.strength, abs(lvl.distance_pct)))
     return levels[:n_levels]

@@ -8,7 +8,7 @@ Resilience contract (Guide §4.3 — state flag pattern):
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import redis as sync_redis
 from sqlalchemy import select
@@ -120,7 +120,7 @@ def collect_prices() -> dict:
         return {
             "collected": collected,
             "failed": failed,
-            "at": datetime.now(timezone.utc).isoformat(),
+            "at": datetime.now(UTC).isoformat(),
         }
 
 
@@ -157,7 +157,9 @@ def collect_historical(period: str = "1y", interval: str = "1d") -> dict:
                     )
                     total += 1
                 db.commit()
-                logger.debug("collect_historical: %s — %d candles saved", stock.symbol, len(candles))
+                logger.debug(
+                    "collect_historical: %s — %d candles saved", stock.symbol, len(candles)
+                )
             except Exception as exc:
                 logger.error("Historical fetch failed for %s: %s", stock.symbol, exc)
                 db.rollback()

@@ -21,13 +21,9 @@ async def list_news(
     query = select(News).order_by(News.published_at.desc().nullslast())
 
     if stock:
-        query = query.join(Stock, News.stock_id == Stock.id).where(
-            Stock.symbol == stock.upper()
-        )
+        query = query.join(Stock, News.stock_id == Stock.id).where(Stock.symbol == stock.upper())
     elif sector:
-        query = query.join(Stock, News.stock_id == Stock.id).where(
-            Stock.sector == sector
-        )
+        query = query.join(Stock, News.stock_id == Stock.id).where(Stock.sector == sector)
 
     rows = (await db.scalars(query.limit(limit))).all()
 
@@ -36,9 +32,7 @@ async def list_news(
     symbols: dict[int, str] = {}
     if stock_ids:
         for sid, sym in (
-            await db.execute(
-                select(Stock.id, Stock.symbol).where(Stock.id.in_(stock_ids))
-            )
+            await db.execute(select(Stock.id, Stock.symbol).where(Stock.id.in_(stock_ids)))
         ).all():
             symbols[sid] = sym
 

@@ -2,7 +2,7 @@
 
 import base64
 import io
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pyotp
@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 
+from app.core.audit import log_action
 from app.core.config import settings
 from app.core.deps import ClientIP, CurrentUser, DbSession, TokenPayload, UserAgent
 from app.core.oauth import oauth
@@ -20,17 +21,15 @@ from app.core.rate_limit import (
     limiter,
     record_failed_attempt,
 )
-from app.core.audit import log_action
 from app.core.security import (
     REFRESH,
     create_access_token,
-    create_refresh_token,
     create_refresh_token_rotated,
     decode_token,
     verify_and_rotate_refresh,
 )
 from app.models.session import UserSession
-from app.models.user import User, UserRole
+from app.models.user import User
 from app.schemas.auth import (
     ConsentStatus,
     DeleteAccountRequest,
@@ -70,7 +69,7 @@ async def _create_session(
         ip_address=ip_address,
         user_agent=user_agent,
         is_active=True,
-        last_activity_at=datetime.now(timezone.utc),
+        last_activity_at=datetime.now(UTC),
     )
     db.add(session)
     await db.flush()
@@ -87,7 +86,9 @@ async def _issue_tokens(
     session = await _create_session(db, UUID(user_id), client_ip, user_agent)
     access = create_access_token(user_id, session_id=str(session.id))
     refresh, family_id = await create_refresh_token_rotated(user_id)
-    await log_action(db, UUID(user_id), "login", "user", user_id, client_ip, user_agent, auth_method)
+    await log_action(
+        db, UUID(user_id), "login", "user", user_id, client_ip, user_agent, auth_method
+    )
     return TokenPair(access_token=access, refresh_token=refresh)
 
 
@@ -358,14 +359,14 @@ async def refresh_token(
 
     user = await db.scalar(select(User).where(User.id == UUID(payload["sub"])))
     if user is None or not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 
     new_refresh = await verify_and_rotate_refresh(payload)
     if new_refresh is None:
         await record_failed_attempt(f"{client_ip}:{user.email}")
-        await log_action(db, user.id, "token_reuse_detected", "auth", str(user.id), client_ip, user_agent)
+        await log_action(
+            db, user.id, "token_reuse_detected", "auth", str(user.id), client_ip, user_agent
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has been revoked. Please log in again.",
@@ -373,14 +374,19 @@ async def refresh_token(
 
     session_id = None
     if "family" in payload:
-        stmt = select(UserSession).where(
-            UserSession.user_id == user.id,
-            UserSession.is_active == True,
-        ).order_by(UserSession.last_activity_at.desc()).limit(1)
+        stmt = (
+            select(UserSession)
+            .where(
+                UserSession.user_id == user.id,
+                UserSession.is_active.is_(True),
+            )
+            .order_by(UserSession.last_activity_at.desc())
+            .limit(1)
+        )
         last_session = await db.scalar(stmt)
         if last_session:
             session_id = str(last_session.id)
-            last_session.last_activity_at = datetime.now(timezone.utc)
+            last_session.last_activity_at = datetime.now(UTC)
 
     access = create_access_token(str(user.id), session_id=session_id)
     await log_action(db, user.id, "token_refresh", "auth", str(user.id), client_ip, user_agent)
@@ -409,7 +415,9 @@ async def logout(
         if session:
             session.is_active = False
 
-    await log_action(db, current_user.id, "logout", "user", str(current_user.id), client_ip, user_agent)
+    await log_action(
+        db, current_user.id, "logout", "user", str(current_user.id), client_ip, user_agent
+    )
     return {"detail": "Logged out"}
 
 
@@ -431,7 +439,9 @@ async def update_me(
 ) -> User:
     if body.display_name is not None:
         current_user.display_name = body.display_name
-    await log_action(db, current_user.id, "profile_update", "user", str(current_user.id), client_ip, user_agent)
+    await log_action(
+        db, current_user.id, "profile_update", "user", str(current_user.id), client_ip, user_agent
+    )
     return current_user
 
 
@@ -449,19 +459,19 @@ async def export_user_data(
     from app.models.alert import PriceAlert
     from app.models.portfolio import Portfolio
 
-    portfolios = await db.execute(
-        select(Portfolio).where(Portfolio.user_id == current_user.id)
-    )
-    alerts = await db.execute(
-        select(PriceAlert).where(PriceAlert.user_id == current_user.id)
-    )
+    portfolios = await db.execute(select(Portfolio).where(Portfolio.user_id == current_user.id))
+    alerts = await db.execute(select(PriceAlert).where(PriceAlert.user_id == current_user.id))
     sessions = await db.execute(
-        select(UserSession).where(UserSession.user_id == current_user.id).order_by(UserSession.created_at.desc())
+        select(UserSession)
+        .where(UserSession.user_id == current_user.id)
+        .order_by(UserSession.created_at.desc())
     )
 
-    await log_action(db, current_user.id, "data_export", "user", str(current_user.id), client_ip, user_agent)
+    await log_action(
+        db, current_user.id, "data_export", "user", str(current_user.id), client_ip, user_agent
+    )
     return {
-        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "exported_at": datetime.now(UTC).isoformat(),
         "user": UserOut.model_validate(current_user).model_dump(),
         "portfolios": [{"id": str(p.id), "name": p.name} for p in portfolios.scalars().all()],
         "alerts": [
@@ -492,17 +502,17 @@ async def export_user_data_pdf(
     from app.models.alert import PriceAlert
     from app.models.portfolio import Portfolio
 
-    portfolios = await db.execute(
-        select(Portfolio).where(Portfolio.user_id == current_user.id)
-    )
-    alerts = await db.execute(
-        select(PriceAlert).where(PriceAlert.user_id == current_user.id)
-    )
+    portfolios = await db.execute(select(Portfolio).where(Portfolio.user_id == current_user.id))
+    alerts = await db.execute(select(PriceAlert).where(PriceAlert.user_id == current_user.id))
     sessions = await db.execute(
-        select(UserSession).where(UserSession.user_id == current_user.id).order_by(UserSession.created_at.desc())
+        select(UserSession)
+        .where(UserSession.user_id == current_user.id)
+        .order_by(UserSession.created_at.desc())
     )
 
-    await log_action(db, current_user.id, "data_export_pdf", "user", str(current_user.id), client_ip, user_agent)
+    await log_action(
+        db, current_user.id, "data_export_pdf", "user", str(current_user.id), client_ip, user_agent
+    )
 
     user = current_user
     portfolios_list = list(portfolios.scalars().all())
@@ -513,9 +523,9 @@ async def export_user_data_pdf(
 
     try:
         from weasyprint import HTML as HTMLRenderer
+
         pdf_bytes = HTMLRenderer(string=html).write_pdf()
     except ImportError:
-        from io import BytesIO
         from fpdf import FPDF
 
         pdf = FPDF()
@@ -530,7 +540,12 @@ async def export_user_data_pdf(
         pdf.ln(10)
         pdf.cell(200, 10, text=f"Role: {user.role.value}", align="L")
         pdf.ln(10)
-        pdf.cell(200, 10, text=f"Joined: {user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A'}", align="L")
+        pdf.cell(
+            200,
+            10,
+            text=f"Joined: {user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A'}",
+            align="L",
+        )
         pdf.ln(20)
 
         if portfolios_list:
@@ -549,17 +564,25 @@ async def export_user_data_pdf(
             pdf.ln(10)
             pdf.set_font("Helvetica", size=10)
             for a in alerts_list:
-                pdf.cell(200, 10, text=f"  - {a.symbol} @ {a.target_price} ({'active' if a.is_active else 'inactive'})", align="L")
+                state = "active" if a.is_active else "inactive"
+                pdf.cell(
+                    200,
+                    10,
+                    text=f"  - {a.symbol} @ {a.target_price} ({state})",
+                    align="L",
+                )
                 pdf.ln(8)
 
         pdf_bytes = bytes(pdf.output())
 
     from fastapi.responses import Response
+
+    filename = f"vortex-data-export-{user.id.hex[:8]}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'attachment; filename="vortex-data-export-{user.id.hex[:8]}.pdf"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
         },
     )
 
@@ -590,6 +613,7 @@ def _build_export_html(
                 f"<td>{s.ip_address or '—'}</td><td>{active}</td></tr>"
             )
 
+    joined = user.created_at.strftime("%Y-%m-%d") if user.created_at else "—"
     return f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>Vortex – Data Export</title>
@@ -604,34 +628,34 @@ def _build_export_html(
 </style></head>
 <body>
 <h1>Vortex – Data Export</h1>
-<p class="meta">Exported {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}</p>
+<p class="meta">Exported {datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")}</p>
 
 <h2>Profile</h2>
 <table>
   <tr><th>Email</th><td>{user.email}</td></tr>
-  <tr><th>Name</th><td>{user.display_name or '—'}</td></tr>
+  <tr><th>Name</th><td>{user.display_name or "—"}</td></tr>
   <tr><th>Role</th><td>{user.role.value}</td></tr>
-  <tr><th>Joined</th><td>{user.created_at.strftime('%Y-%m-%d') if user.created_at else '—'}</td></tr>
-  <tr><th>2FA</th><td>{'Enabled' if user.totp_enabled else 'Disabled'}</td></tr>
-  <tr><th>Consent</th><td>{'Given' if user.consent_given_at else 'Not given'}</td></tr>
+  <tr><th>Joined</th><td>{joined}</td></tr>
+  <tr><th>2FA</th><td>{"Enabled" if user.totp_enabled else "Disabled"}</td></tr>
+  <tr><th>Consent</th><td>{"Given" if user.consent_given_at else "Not given"}</td></tr>
 </table>
 
 <h2>Portfolios ({len(portfolios)})</h2>
 <table>
   <tr><th>ID</th><th>Name</th></tr>
-  {''.join(rows) if rows else '<tr><td colspan="2">No portfolios</td></tr>'}
+  {"".join(rows) if rows else '<tr><td colspan="2">No portfolios</td></tr>'}
 </table>
 
 <h2>Alerts ({len(alerts)})</h2>
 <table>
   <tr><th>Symbol</th><th>Target</th><th>Direction</th><th>Status</th></tr>
-  {''.join(alert_rows) if alert_rows else '<tr><td colspan="4">No alerts</td></tr>'}
+  {"".join(alert_rows) if alert_rows else '<tr><td colspan="4">No alerts</td></tr>'}
 </table>
 
 <h2>Sessions ({len(sessions) if sessions else 0})</h2>
 <table>
   <tr><th>Date</th><th>IP Address</th><th>Status</th></tr>
-  {''.join(session_rows) if session_rows else '<tr><td colspan="3">No session data</td></tr>'}
+  {"".join(session_rows) if session_rows else '<tr><td colspan="3">No session data</td></tr>'}
 </table>
 
 <p class="meta">This export contains all personal data held by Vortex.</p>
@@ -655,7 +679,9 @@ async def delete_account(
             detail="Confirmation must match your email address.",
         )
 
-    await log_action(db, current_user.id, "account_deletion", "user", str(current_user.id), client_ip, user_agent)
+    await log_action(
+        db, current_user.id, "account_deletion", "user", str(current_user.id), client_ip, user_agent
+    )
 
     stmt = select(UserSession).where(UserSession.user_id == current_user.id)
     sessions = await db.execute(stmt)
@@ -674,8 +700,10 @@ async def give_consent(
     user_agent: UserAgent,
 ):
     """Record explicit user consent for data processing."""
-    current_user.consent_given_at = datetime.now(timezone.utc)
-    await log_action(db, current_user.id, "consent_given", "user", str(current_user.id), client_ip, user_agent)
+    current_user.consent_given_at = datetime.now(UTC)
+    await log_action(
+        db, current_user.id, "consent_given", "user", str(current_user.id), client_ip, user_agent
+    )
     return {"detail": "Consent recorded. Thank you."}
 
 
@@ -686,7 +714,9 @@ async def consent_status(
     """Check whether the user has given data-processing consent."""
     return ConsentStatus(
         consent_given=current_user.consent_given_at is not None,
-        consent_given_at=current_user.consent_given_at.isoformat() if current_user.consent_given_at else None,
+        consent_given_at=current_user.consent_given_at.isoformat()
+        if current_user.consent_given_at
+        else None,
     )
 
 

@@ -29,17 +29,13 @@ async def _owned_portfolio(db: DbSession, user_id, portfolio_id: int) -> Portfol
 @router.get("", response_model=list[PortfolioOut])
 async def list_portfolios(db: DbSession, user: CurrentUser) -> list[dict]:
     portfolios = (
-        await db.scalars(
-            select(Portfolio).options(_LOAD).where(Portfolio.user_id == user.id)
-        )
+        await db.scalars(select(Portfolio).options(_LOAD).where(Portfolio.user_id == user.id))
     ).all()
     return [serialize_portfolio(p) for p in portfolios]
 
 
 @router.post("", response_model=PortfolioOut, status_code=status.HTTP_201_CREATED)
-async def create_portfolio(
-    body: PortfolioCreate, db: DbSession, user: CurrentUser
-) -> dict:
+async def create_portfolio(body: PortfolioCreate, db: DbSession, user: CurrentUser) -> dict:
     portfolio = Portfolio(name=body.name, user_id=user.id)
     db.add(portfolio)
     await db.flush()
@@ -93,8 +89,6 @@ async def delete_holding(
 
 
 @router.delete("/{portfolio_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_portfolio(
-    portfolio_id: int, db: DbSession, user: CurrentUser
-) -> None:
+async def delete_portfolio(portfolio_id: int, db: DbSession, user: CurrentUser) -> None:
     portfolio = await _owned_portfolio(db, user.id, portfolio_id)
     await db.delete(portfolio)

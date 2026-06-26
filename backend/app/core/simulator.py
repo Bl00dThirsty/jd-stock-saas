@@ -9,7 +9,7 @@ few seconds. The WebSocket forwards them and the UI blinks. Disabled outside
 import asyncio
 import json
 import random
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
@@ -45,7 +45,7 @@ async def run_price_simulator(stop: asyncio.Event) -> None:
                 "change": change,
                 "change_percent": change_pct,
                 "volume": None,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
             try:
                 await redis_client.publish(price_channel(sym), json.dumps(message))
@@ -54,5 +54,5 @@ async def run_price_simulator(stop: asyncio.Event) -> None:
 
         try:
             await asyncio.wait_for(stop.wait(), timeout=TICK_INTERVAL)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             pass

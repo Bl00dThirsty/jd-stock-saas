@@ -17,9 +17,7 @@ from app.core.database import Base
 class ObjectHistory(Base):
     __tablename__ = "object_history"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     object_type: Mapped[str] = mapped_column(String(32), nullable=False)
     object_id: Mapped[str] = mapped_column(String(64), nullable=False)
     field_name: Mapped[str | None] = mapped_column(String(64))
@@ -33,6 +31,4 @@ class ObjectHistory(Base):
     reason: Mapped[str | None] = mapped_column(String(512))
     source: Mapped[str] = mapped_column(String(32), default="API", server_default="API")
 
-    __table_args__ = (
-        Index("ix_object_history_object", "object_type", "object_id", "changedate"),
-    )
+    __table_args__ = (Index("ix_object_history_object", "object_type", "object_id", "changedate"),)

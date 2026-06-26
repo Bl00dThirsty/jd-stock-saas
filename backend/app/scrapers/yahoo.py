@@ -1,6 +1,6 @@
 """Yahoo Finance scraper (yfinance) — NGX tickers use the ``.LAGOS`` suffix."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import yfinance as yf
 
@@ -48,7 +48,7 @@ class YahooScraper(BaseScraper):
         )
 
         quotes: list[Quote] = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for symbol, ticker in zip(symbols, tickers, strict=True):
             try:
                 frame = data[ticker] if len(tickers) > 1 else data

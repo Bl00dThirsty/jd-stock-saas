@@ -53,9 +53,7 @@ class ClassificationAttribute(Base, TimestampMixin, RowstampMixin):
     assetattrid: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(String(255))
     # ALN / NUMERIC / DATE / BOOLEAN / ASSET / MEMO
-    attribute_type: Mapped[str] = mapped_column(
-        String(16), default="ALN", server_default="ALN"
-    )
+    attribute_type: Mapped[str] = mapped_column(String(16), default="ALN", server_default="ALN")
     measureunitid: Mapped[str | None] = mapped_column(String(32))
     mandatory: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     displaysequence: Mapped[int] = mapped_column(Integer, default=0, server_default="0")

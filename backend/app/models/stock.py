@@ -61,9 +61,7 @@ class Stock(Base, TimestampMixin, EnterpriseMixin):
     prices: Mapped[list["PriceHistory"]] = relationship(
         back_populates="stock", cascade="all, delete-orphan"
     )
-    news: Mapped[list["News"]] = relationship(
-        back_populates="stock", cascade="all, delete-orphan"
-    )
+    news: Mapped[list["News"]] = relationship(back_populates="stock", cascade="all, delete-orphan")
     attributes: Mapped[list["StockAttribute"]] = relationship(
         back_populates="stock", cascade="all, delete-orphan"
     )

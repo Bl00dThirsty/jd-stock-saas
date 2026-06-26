@@ -1,7 +1,7 @@
 """JWT creation & verification (access + refresh tokens)."""
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import uuid4
 
@@ -28,6 +28,7 @@ def verify_password(password: str, password_hash: str) -> bool:
         return bcrypt.checkpw(password.encode("utf-8"), password_hash.encode("utf-8"))
     except (ValueError, TypeError):
         return False
+
 
 # ─── Token blacklist helpers (Redis) ────────────────────────────────────
 
@@ -69,7 +70,7 @@ async def _increment_family_nonce(family_id: str, ttl_days: int) -> int:
 
 
 def _create_token(subject: str, token_type: str, expires: timedelta, **extra: Any) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "jti": str(uuid4()),
         "sub": subject,
@@ -153,9 +154,7 @@ async def verify_and_rotate_refresh(
 def decode_token(token: str, expected_type: str | None = None) -> dict[str, Any] | None:
     """Decode & validate a JWT. Returns the payload or None if invalid."""
     try:
-        payload = jwt.decode(
-            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
-        )
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
         return None
     if expected_type and payload.get("type") != expected_type:

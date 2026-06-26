@@ -1,7 +1,7 @@
 """Stock & market endpoints."""
 
 from dataclasses import asdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlalchemy import or_, select
@@ -111,18 +111,20 @@ async def get_financials(db: DbSession, symbol: str) -> dict:
 async def get_analytics(db: DbSession, symbol: str) -> StockAnalyticsOut:
     stock = await _get_stock_or_404(db, symbol)
     all_prices = list(
-        (await db.scalars(
-            select(PriceHistory)
-            .where(PriceHistory.stock_id == stock.id)
-            .order_by(PriceHistory.timestamp.asc())
-        )).all()
+        (
+            await db.scalars(
+                select(PriceHistory)
+                .where(PriceHistory.stock_id == stock.id)
+                .order_by(PriceHistory.timestamp.asc())
+            )
+        ).all()
     )
 
     prices = [p.price for p in all_prices]
     timestamps = [p.timestamp for p in all_prices]
     volumes = [p.volume or 0.0 for p in all_prices]
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     period_windows: dict[str, int | None] = {"1y": 365, "3y": 1095, "5y": 1825, "max": None}
     returns: list[ReturnMetricsOut] = []
@@ -148,7 +150,10 @@ async def get_analytics(db: DbSession, symbol: str) -> StockAnalyticsOut:
 
     logger.debug(
         "Analytics for %s: %d periods, vol_anomaly=%s, %d S/R levels",
-        symbol, len(returns), vol_anomaly is not None, len(sr_levels),
+        symbol,
+        len(returns),
+        vol_anomaly is not None,
+        len(sr_levels),
     )
 
     return StockAnalyticsOut(

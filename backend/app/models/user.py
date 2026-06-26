@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from app.models.watchlist import Watchlist
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     FREE = "free"
     PREMIUM = "premium"
     PRO = "pro"
@@ -28,9 +28,7 @@ class UserRole(str, enum.Enum):
 class User(Base, TimestampMixin):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     # Nullable: a user may sign up with email/password and have no Google identity.
     google_id: Mapped[str | None] = mapped_column(
@@ -49,9 +47,7 @@ class User(Base, TimestampMixin):
     )
     totp_secret: Mapped[str | None] = mapped_column(String(64), default=None)
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    consent_given_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), default=None
-    )
+    consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
 
     portfolios: Mapped[list["Portfolio"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"

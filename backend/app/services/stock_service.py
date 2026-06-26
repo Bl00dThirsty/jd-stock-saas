@@ -1,6 +1,6 @@
 """Stock & market business logic."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import case, func, select
@@ -26,9 +26,7 @@ PERIOD_WINDOW_DAYS: dict[str, int | None] = {
 }
 
 
-async def get_history(
-    db: AsyncSession, stock: Stock, period: str
-) -> list[dict]:
+async def get_history(db: AsyncSession, stock: Stock, period: str) -> list[dict]:
     """Return candles from the DB for the requested period window.
 
     Falls back to a live Yahoo fetch only when nothing is stored.
@@ -36,7 +34,7 @@ async def get_history(
     query = select(PriceHistory).where(PriceHistory.stock_id == stock.id)
     window = PERIOD_WINDOW_DAYS.get(period)
     if window is not None:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=window)
+        cutoff = datetime.now(UTC) - timedelta(days=window)
         query = query.where(PriceHistory.timestamp >= cutoff)
 
     rows = (await db.scalars(query.order_by(PriceHistory.timestamp.asc()))).all()
@@ -76,9 +74,7 @@ async def get_history(
 async def market_summary(db: AsyncSession, limit: int = 5) -> dict:
     """Compute advancers/decliners, total volume and top movers."""
     total_volume = await db.scalar(select(func.coalesce(func.sum(Stock.volume), 0.0)))
-    total_market_cap = await db.scalar(
-        select(func.coalesce(func.sum(Stock.market_cap), 0.0))
-    )
+    total_market_cap = await db.scalar(select(func.coalesce(func.sum(Stock.market_cap), 0.0)))
     avg_change = await db.scalar(select(func.avg(Stock.change_percent)))
     advancers = await db.scalar(select(func.count()).where(Stock.change_percent > 0))
     decliners = await db.scalar(select(func.count()).where(Stock.change_percent < 0))

@@ -10,22 +10,26 @@ Log level is controlled by the LOG_LEVEL env variable (default: info).
 import logging
 import sys
 
-
 _LEVEL_MAP: dict[str, int] = {
-    "debug":    logging.DEBUG,
-    "info":     logging.INFO,
-    "warning":  logging.WARNING,
-    "error":    logging.ERROR,
+    "debug": logging.DEBUG,
+    "info": logging.INFO,
+    "warning": logging.WARNING,
+    "error": logging.ERROR,
     "critical": logging.CRITICAL,
 }
 
-_DEV_FMT  = "%(asctime)s [%(levelname)-8s] %(name)s: %(message)s"
+_DEV_FMT = "%(asctime)s [%(levelname)-8s] %(name)s: %(message)s"
 _PROD_FMT = "%(asctime)s [%(levelname)-8s] %(name)s %(funcName)s:%(lineno)d: %(message)s"
 
 # Noisy third-party loggers — always silenced below WARNING
 _QUIET_LOGGERS = [
-    "yfinance", "peewee", "urllib3", "httpx", "httpcore",
-    "celery.utils.functional", "multipart",
+    "yfinance",
+    "peewee",
+    "urllib3",
+    "httpx",
+    "httpcore",
+    "celery.utils.functional",
+    "multipart",
 ]
 
 
