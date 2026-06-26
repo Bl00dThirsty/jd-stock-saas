@@ -20,7 +20,7 @@ class VortexAPIError(Exception):
     """
 
     status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR
-    error_code:  str = "internal_error"
+    error_code: str = "internal_error"
 
     def __init__(self, detail: str, *, error_code: str | None = None) -> None:
         self.detail = detail
@@ -31,35 +31,41 @@ class VortexAPIError(Exception):
 
 class NotFoundError(VortexAPIError):
     """Requested resource does not exist."""
+
     status_code = status.HTTP_404_NOT_FOUND
-    error_code  = "not_found"
+    error_code = "not_found"
 
 
 class ConflictError(VortexAPIError):
     """Resource already exists or unique constraint violated."""
+
     status_code = status.HTTP_409_CONFLICT
-    error_code  = "conflict"
+    error_code = "conflict"
 
 
 class LimitExceededError(VortexAPIError):
     """User has hit a per-account resource limit (watchlists, alerts…)."""
+
     status_code = status.HTTP_400_BAD_REQUEST
-    error_code  = "limit_exceeded"
+    error_code = "limit_exceeded"
 
 
 class ValidationError(VortexAPIError):
     """Business-rule validation failed (distinct from Pydantic schema errors)."""
-    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-    error_code  = "validation_error"
+
+    status_code = 422  # Unprocessable Content
+    error_code = "validation_error"
 
 
 class ExternalServiceError(VortexAPIError):
     """Third-party scraper / API failure — non-fatal for the platform."""
+
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-    error_code  = "external_service_unavailable"
+    error_code = "external_service_unavailable"
 
 
 # ── FastAPI handler ───────────────────────────────────────────────────────────
+
 
 async def vortex_exception_handler(request: Request, exc: VortexAPIError) -> JSONResponse:
     """Convert any VortexAPIError into a uniform JSON error envelope."""

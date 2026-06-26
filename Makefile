@@ -1,8 +1,11 @@
 # NGX Stock SaaS — common commands
-.PHONY: help up down build logs migrate seed revision backend-sh fmt test fe-test
+.PHONY: help setup-env up down build logs migrate seed revision backend-sh fmt test fe-test
 
 help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-14s\033[0m %s\n", $$1, $$2}'
+
+setup-env:      ## Create .env from .env.example if it doesn't exist yet
+	@test -f .env && echo ".env already exists — leaving it untouched" || (cp .env.example .env && echo "Created .env from .env.example — fill in the secrets")
 
 up:             ## Start the full stack
 	docker compose up --build

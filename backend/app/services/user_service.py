@@ -59,9 +59,7 @@ async def get_or_create_from_apple(
 
 
 async def email_exists(db: AsyncSession, email: str) -> bool:
-    return (
-        await db.scalar(select(User).where(User.email == email.lower()))
-    ) is not None
+    return (await db.scalar(select(User).where(User.email == email.lower()))) is not None
 
 
 async def create_with_password(

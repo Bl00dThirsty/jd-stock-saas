@@ -10,7 +10,7 @@ Usage:
 import asyncio
 import hashlib
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
 
@@ -36,7 +36,7 @@ async def seed_demo() -> None:
 
         await db.execute(delete(PriceHistory))
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         total_points = 0
 
         for stock in stocks:

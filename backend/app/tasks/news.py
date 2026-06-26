@@ -4,7 +4,7 @@ yfinance exposes a ``.news`` attribute per Ticker. This task upserts items
 keyed by URL so re-runs don't duplicate rows.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import yfinance as yf
 from sqlalchemy import select
@@ -71,7 +71,7 @@ def _parse_published(value) -> datetime | None:
     if value is None:
         return None
     if isinstance(value, (int, float)):
-        return datetime.fromtimestamp(value, tz=timezone.utc)
+        return datetime.fromtimestamp(value, tz=UTC)
     try:
         return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
     except ValueError:

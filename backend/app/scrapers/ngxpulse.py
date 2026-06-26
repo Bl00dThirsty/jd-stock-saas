@@ -1,6 +1,6 @@
 """NGXPulse API client — fallback quotes + company profiles (20-min refresh)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -26,9 +26,7 @@ class NGXPulseScraper(BaseScraper):
         return {"X-API-Key": self.api_key} if self.api_key else {}
 
     def _fetch_all(self) -> list[dict]:
-        resp = httpx.get(
-            f"{self.base_url}/stocks", headers=self._headers(), timeout=20.0
-        )
+        resp = httpx.get(f"{self.base_url}/stocks", headers=self._headers(), timeout=20.0)
         resp.raise_for_status()
         payload = resp.json()
         # The API may wrap rows under a "data" key.
@@ -41,7 +39,7 @@ class NGXPulseScraper(BaseScraper):
         except (httpx.HTTPError, ValueError):
             return []
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         quotes: list[Quote] = []
         for row in rows:
             symbol = str(row.get("symbol", "")).upper()

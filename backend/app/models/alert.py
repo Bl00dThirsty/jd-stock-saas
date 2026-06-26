@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from app.models.user import User
 
 
-class AlertDirection(str, enum.Enum):
+class AlertDirection(enum.StrEnum):
     above = "above"
     below = "below"
 

@@ -68,9 +68,7 @@ async def create_alert(body: AlertCreate, db: DbSession, user: CurrentUser) -> d
 
 
 @router.patch("/{alert_id}", response_model=AlertOut)
-async def toggle_alert(
-    alert_id: int, body: AlertToggle, db: DbSession, user: CurrentUser
-) -> dict:
+async def toggle_alert(alert_id: int, body: AlertToggle, db: DbSession, user: CurrentUser) -> dict:
     alert = await _owned_alert(db, user.id, alert_id)
     alert.is_active = body.is_active
     if body.is_active:
